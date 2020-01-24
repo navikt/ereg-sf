@@ -17,6 +17,7 @@ internal fun work(ev: EnvVar) {
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
             ConsumerConfig.GROUP_ID_CONFIG to ev.kafkaClientID,
             ConsumerConfig.CLIENT_ID_CONFIG to ev.kafkaClientID,
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
             ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "false"
         ).let { cMap ->
             if (ev.kafkaSecurityEnabled())
