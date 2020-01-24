@@ -1,0 +1,69 @@
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: ereg-sf
+  namespace: default
+  labels:
+    team: teamcrm
+spec:
+  webproxy: true
+  image: {{ image }}
+  port: 8080
+  replicas:
+    min: 1
+    max: 1
+  liveness:
+    path: /isAlive
+    initialDelay: 5
+    periodSeconds: 5
+    failureThreshold: 30
+  readiness:
+    path: /isReady
+    initialDelay: 5
+    periodSeconds: 5
+    failureThreshold: 30
+  prometheus:
+    enabled: true
+    path: /metrics
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 4096Mi
+    requests:
+      cpu: 100m
+      memory: 2048Mi
+  vault:
+    enabled: true
+    paths:
+      - mountPath: /var/run/secrets/nais.io/vault
+        kvPath: /kv/preprod/sbs/ereg-sf/default
+      - mountPath: /var/run/secrets/nais.io/serviceuser
+        kvPath: /serviceuser/data/dev/srveregsf
+  env:
+    - name: KAFKA_BROKERS
+      value: SASL_SSL://b27apvl00045.preprod.local:8443,SASL_SSL://b27apvl00046.preprod.local:8443,SASL_SSL://b27apvl00047.preprod.local:8443
+    - name: KAFKA_CLIENTID
+      value: ereg-sf
+    - name: KAFKA_SECURITY
+      value: 'TRUE'
+    - name: KAFKA_SECPROT
+      value: SASL_SSL
+    - name: KAFKA_SASLMEC
+      value: PLAIN
+    - name: KAFKA_TOPIC
+      value: public-ereg-cache-org-json
+    - name: SF_OAUTHURL
+      value: 'tbd'
+    - name: SF_TOKEN
+      value: 'tbd'
+    - name: SF_RESTENDPOINT
+      value: 'tbd'
+    - name: RUN_EACH_MORNING
+      value: 'TRUE'
+    - name: WAKEUP_TIME
+      value: 'T05:15:00'
+    - name: MAX_ATTEMPTS
+      value: '24'
+    - name: MS_BETWEEN_RETRIES
+      value: '1800000'
+
