@@ -31,7 +31,7 @@ internal fun work(ev: EnvVar) {
             // TODO feedback to KafkaDSL should be IsOk in order to commit
             ConsumerStates.IsOkNoCommit
         } else {
-            log.info { "Cache completed - leaving kafka consumer loop" }
+            log.info { "Kafka events completed for now - leaving kafka consumer loop" }
             ConsumerStates.IsFinished
         }
     }
