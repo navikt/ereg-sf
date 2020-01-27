@@ -25,12 +25,10 @@ data class EnvVar(
     val sfOAuthUrl: String = System.getenv("SF_OAUTHURL")?.toString() ?: "",
     val sfToken: String = System.getenv("SF_TOKEN")?.toString() ?: "",
     val sfRestEndpoint: String = System.getenv("SF_RESTENDPOINT")?.toString() ?: "",
-    val httpsProxy: String = System.getenv("HTTPS_PROXY")?.toString() ?: "",
 
-    val runEachMorning: String = System.getenv("RUN_EACH_MORNING")?.toString()?.toUpperCase() ?: "FALSE",
-    val wakeupTime: String = System.getenv("WAKEUP_TIME")?.toString()?.toUpperCase() ?: "T05:30:00",
-    val maxAttempts: Int = System.getenv("MAX_ATTEMPTS")?.toInt() ?: 24,
-    val msBetweenAttempts: Long = System.getenv("MS_BETWEEN_RETRIES")?.toLong() ?: 30 * 60 * 1_000
+    // other details
+    val httpsProxy: String = System.getenv("HTTPS_PROXY")?.toString() ?: "",
+    val msBetweenWork: Long = System.getenv("MS_BETWEEN_WORK")?.toLong() ?: 5 * 60 * 1_000
 )
 
 fun EnvVar.kafkaSecurityEnabled(): Boolean = kafkaSecurity == "TRUE"
@@ -40,5 +38,3 @@ fun EnvVar.kafkaSecurityComplete(): Boolean =
 
 fun EnvVar.sfDetailsComplete(): Boolean =
     sfOAuthUrl.isNotEmpty() && sfToken.isNotEmpty() && sfRestEndpoint.isNotEmpty()
-
-fun EnvVar.runEachMorning(): Boolean = runEachMorning == "TRUE"

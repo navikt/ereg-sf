@@ -30,12 +30,6 @@ object Metrics {
         .help("No. of failed requests to Salesforce since last restart")
         .register()
 
-    val noOfAttempts: Counter = Counter
-        .build()
-        .name("attempt_counter")
-        .help("No. of attempts since last successful run")
-        .register()
-
     val sentOrgs: Counter = Counter
         .build()
         .name("sent_organisation_counter")
@@ -56,7 +50,6 @@ object Metrics {
         responseLatency.clear()
         successfulRequest.clear()
         failedRequest.clear()
-        noOfAttempts.clear()
         sentOrgs.clear()
     }
 }

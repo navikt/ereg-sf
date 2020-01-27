@@ -48,18 +48,13 @@ tasks.withType(JavaExec) {
 
 run {
     environment "KAFKA_BROKERS", "localhost:9092"
-    environment "KAFKA_CLIENTID", "ereg_splitter_change"
+    environment "KAFKA_CLIENTID", "ereg-sf"
     environment "KAFKA_SECURITY", "FALSE"
     environment "KAFKA_TOPIC", "public-ereg-cache-org-json"
-    environment "EREG_UEURL", "https://data.brreg.no/enhetsregisteret/api/underenheter/lastned"
-    environment "EREG_UEACCEPT", "application/vnd.brreg.enhetsregisteret.underenhet.v1+gzip;charset=UTF-8"
-    environment "EREG_OEURL", "https://data.brreg.no/enhetsregisteret/api/enheter/lastned"
-    environment "EREG_OEACCEPT", "application/vnd.brreg.enhetsregisteret.enhet.v1+gzip;charset=UTF-8"
-    environment "HTTPS_PROXY", ""
-
-    environment "RUN_EACH_MORNING", "FALSE"
-    environment "MAX_ATTEMPTS", "3"
-    environment "MS_BETWEEN_RETRIES", "40000"
+    environment "SF_OAUTHURL", "tbd"
+    environment "SF_TOKEN", "tbd"
+    environment "SF_RESTENDPOINT", "tbd"
+    environment "MS_BETWEEN_WORK", "40000"
 }
 
 repositories {
@@ -93,7 +88,6 @@ dependencies {
     implementation "io.github.microutils:kotlin-logging:$kotlin_loggin_version"
     implementation "ch.qos.logback:logback-classic:$logback_version"
     implementation "net.logstash.logback:logstash-logback-encoder:$logstash_encoder_version"
-    //implementation 'org.slf4j:slf4j-api:1.7.30'
 
     implementation "io.prometheus:simpleclient_common:$prometheus_version"
     implementation "io.prometheus:simpleclient_hotspot:$prometheus_version"

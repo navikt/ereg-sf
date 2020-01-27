@@ -58,12 +58,6 @@ spec:
       value: 'tbd'
     - name: SF_RESTENDPOINT
       value: 'tbd'
-    - name: RUN_EACH_MORNING
-      value: 'TRUE'
-    - name: WAKEUP_TIME
-      value: 'T05:15:00'
-    - name: MAX_ATTEMPTS
-      value: '24'
-    - name: MS_BETWEEN_RETRIES
-      value: '1800000'
+    - name: MS_BETWEEN_WORK
+      value: '300000'
 
