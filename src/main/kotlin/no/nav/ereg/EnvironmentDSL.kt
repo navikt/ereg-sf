@@ -23,7 +23,10 @@ data class EnvVar(
 
     // salesforce details
     val sfOAuthUrl: String = System.getenv("SF_OAUTHURL")?.toString() ?: "",
-    val sfToken: String = System.getenv("SF_TOKEN")?.toString() ?: "",
+    val sfClientID: String = System.getenv("SF_CLIENTID")?.toString() ?: "",
+    val sfClientSecret: String = System.getenv("SF_CLIENTSECRET")?.toString() ?: "",
+    val sfUsername: String = System.getenv("SF_USERNAME")?.toString() ?: "",
+    val sfPassword: String = System.getenv("SF_PASSWORD")?.toString() ?: "",
     val sfRestEndpoint: String = System.getenv("SF_RESTENDPOINT")?.toString() ?: "",
 
     // other details
@@ -37,4 +40,5 @@ fun EnvVar.kafkaSecurityComplete(): Boolean =
     kafkaSecProt.isNotEmpty() && kafkaSaslMec.isNotEmpty() && kafkaUser.isNotEmpty() && kafkaPassword.isNotEmpty()
 
 fun EnvVar.sfDetailsComplete(): Boolean =
-    sfOAuthUrl.isNotEmpty() && sfToken.isNotEmpty() && sfRestEndpoint.isNotEmpty()
+    sfOAuthUrl.isNotEmpty() && sfClientID.isNotEmpty() && sfClientSecret.isNotEmpty() && sfUsername.isNotEmpty() &&
+            sfPassword.isNotEmpty() && sfRestEndpoint.isNotEmpty()

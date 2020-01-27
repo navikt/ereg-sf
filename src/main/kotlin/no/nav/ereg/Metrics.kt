@@ -15,7 +15,7 @@ object Metrics {
     val responseLatency: Summary = Summary
         .build()
         .name("response_latency_seconds")
-        .help("Salesforce response latency")
+        .help("Salesforce post response latency")
         .register()
 
     val successfulRequest: Counter = Counter
