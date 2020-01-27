@@ -35,8 +35,8 @@ internal fun work(ev: EnvVar) {
     ) { cRecords ->
         if (!cRecords.isEmpty) {
             cRecords
-                .map { OrgObject(it.key().protobufSafeParseKey(),it.value().protobufSafeParseValue()) }
-                .filter { it.key.orgNumber.isNotEmpty() && it.value.orgAsJson.isNotEmpty()}
+                .map { OrgObject(it.key().protobufSafeParseKey(), it.value().protobufSafeParseValue()) }
+                .filter { it.key.orgNumber.isNotEmpty() && it.value.orgAsJson.isNotEmpty() }
                 .let { orgObjects ->
                     // TODO post records to SF, with error handling
                     // TODO feedback to KafkaDSL should be IsOk in order to commit
