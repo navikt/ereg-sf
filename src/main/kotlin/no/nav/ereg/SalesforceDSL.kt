@@ -18,7 +18,7 @@ import org.http4k.format.Jackson.auto
 
 private val log = KotlinLogging.logger { }
 
-internal data class SFAuthorization(
+private data class SFAuthorization(
     val access_token: String = "",
     val instance_url: String = "",
     val id: String = "",
@@ -27,7 +27,14 @@ internal data class SFAuthorization(
     val signature: String = ""
 )
 
-internal fun getHTTPClient(hp: String = EnvVarFactory.envVar.httpsProxy) =
+private fun SFAuthorization.isOk(): Boolean = access_token.isNotEmpty() && instance_url.isNotEmpty()
+
+private fun SFAuthorization.getBaseRequest(ev: EnvVar): Request = Request(
+    Method.POST, "${instance_url}${ev.sfRestEndpoint}")
+    .header("Authorization", "Bearer $access_token")
+    .header("Content-Type", "application/json;charset=UTF-8")
+
+private fun getHTTPClient(hp: String = EnvVarFactory.envVar.httpsProxy) =
     if (hp.isNotEmpty())
         ApacheClient(client =
         HttpClients.custom()
@@ -40,83 +47,95 @@ internal fun getHTTPClient(hp: String = EnvVarFactory.envVar.httpsProxy) =
             .build()
         ) else ApacheClient()
 
-internal fun getSFAuthorization(ev: EnvVar): SFAuthorization {
+internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject>) -> Boolean) -> Boolean): Boolean =
+    getHTTPClient().let { client ->
 
-    val responseLens = Body.auto<SFAuthorization>().toLens()
-
-    val resp = getHTTPClient().invoke(
-        Request(Method.POST, ev.sfOAuthUrl)
+        val accessTokenRequest = Request(Method.POST, ev.sfOAuthUrl)
             .query("grant_type", "password")
             .query("client_id", ev.sfClientID)
             .query("client_secret", ev.sfClientSecret)
             .query("username", ev.sfUsername)
             .query("password", ev.sfPassword)
             .body("")
-    )
 
-    return if (resp.status == Status.OK) {
-        try { responseLens(resp) } catch (e: Exception) {
-            log.error { "Couldn't parse 200(OK) JSON authorization response from Salesforce" }
-            ServerState.state = ServerStates.SalesforceIssues
-            SFAuthorization()
+        val getSfAuth: () -> SFAuthorization = {
+            val responseLens = Body.auto<SFAuthorization>().toLens()
+            val response = client.invoke(accessTokenRequest)
+
+            if (response.status == Status.OK)
+                try { responseLens(response)
+                } catch (e: Exception) {
+                    log.error { "Couldn't parse 200(OK) JSON authorization response from Salesforce" }
+                    ServerState.state = ServerStates.SalesforceIssues
+                    SFAuthorization()
+                }
+            else {
+                log.error { "Failed authorization request to Salesforce - ${response.status.description}" }
+                ServerState.state = ServerStates.SalesforceIssues
+                SFAuthorization()
+            }
         }
-    } else {
-        log.error { "Invalid authorization request sent to Salesforce - ${resp.status.description}" }
-        ServerState.state = ServerStates.SalesforceIssues
-        SFAuthorization()
+
+        var sfAuth = getSfAuth()
+
+        if (sfAuth.isOk()) {
+
+            val doPost: (List<OrgObject>) -> Boolean = { list ->
+                val responseTime = Metrics.responseLatency.startTimer()
+                val response = client.invoke(sfAuth.getBaseRequest(ev).body(list.toJsonPayload(ev))).also {
+                    responseTime.observeDuration() }
+
+                val retryOk = when (response.status) {
+                    Status.OK -> {
+                        log.info { "Posted ${list.size} organisations to Salesforce - ${response.status.description}" }
+                        Metrics.successfulRequest.inc()
+                        list.forEach { o -> Metrics.sentOrgs.labels(o.key.orgType.toString()).inc() }
+                        false
+                    }
+                    Status.UNAUTHORIZED -> {
+                        // refresh sf authorization and another attempt
+                        log.info { "Unauthorized - ${response.status.description} - refresh of token and retry" }
+                        Metrics.failedRequest.inc()
+
+                        sfAuth = getSfAuth()
+                        client.invoke(sfAuth.getBaseRequest(ev).body(list.toJsonPayload(ev))).also {
+                            if (it.status == Status.OK) {
+                                log.info { "Successful retry" }
+                                Metrics.successfulRequest.inc()
+                                list.forEach { o -> Metrics.sentOrgs.labels(o.key.orgType.toString()).inc() }
+                            } else {
+                                log.info { "Failed retry" }
+                                ServerState.state = ServerStates.SalesforceIssues
+                                Metrics.failedRequest.inc()
+                            }
+                        }.status == Status.OK
+                    }
+                    else -> {
+                        log.error { "Couldn't post ${list.size} organisations to Salesforce - ${response.status.description}" }
+                        ServerState.state = ServerStates.SalesforceIssues
+                        Metrics.failedRequest.inc()
+                        false
+                    }
+                }
+                response.status == Status.OK || retryOk
+            }
+
+            doSomething(doPost)
+            true
+        } else false
     }
-}
 
-internal fun postToSalsesforce(
-    ev: EnvVar,
-    sfAuth: SFAuthorization,
-    body: String,
-    noOfOrgs: Int
-): Boolean {
+private fun List<OrgObject>.toJsonPayload(ev: EnvVar): String = Jackson.let { json ->
 
-    val responseTime = Metrics.responseLatency.startTimer()
-
-    return getHTTPClient().invoke(
-        Request(
-            Method.POST,
-            "${sfAuth.instance_url}${ev.sfRestEndpoint}"
-        )
-            .header("Authorization", "Bearer ${sfAuth.access_token}")
-            .header("Content-Type", "application/json;charset=UTF-8")
-            .body(body)
-    ).also {
-        responseTime.observeDuration()
-
-        if (it.status == Status.OK)
-            log.info { "Posted $noOfOrgs organisations to Salesforce - ${it.status.description}" }
-        else {
-            log.error { "Couldn't post $noOfOrgs organisations to Salesforce - ${it.status.description}" }
-            ServerState.state = ServerStates.SalesforceIssues
-        }
-    }.status == Status.OK
-}
-
-internal fun List<OrgObject>.postToSalesforce(ev: EnvVar, sfAuth: SFAuthorization): Boolean {
-
-    val json = Jackson
-    val orgsAsJson: List<JsonNode> = this.map { it.toJson(ev) }
-    val body: String = json.obj(
+    json.obj(
         "allOrNone" to json.boolean(true),
-        "records" to json.array(orgsAsJson)
+        "records" to json.array(this.map { it.toJson(ev) })
     ).toString()
-
-    return postToSalsesforce(ev, sfAuth, body, this.size).also { postOk ->
-        if (postOk) {
-            Metrics.successfulRequest.inc()
-            this.forEach { Metrics.sentOrgs.labels(it.key.orgType.toString()).inc() }
-        } else Metrics.failedRequest.inc()
-    }
 }
 
-internal fun OrgObject.toJson(ev: EnvVar): JsonNode {
+private fun OrgObject.toJson(ev: EnvVar): JsonNode = Jackson.let { json ->
 
-    val json = Jackson
-    return json.obj(
+    json.obj(
         "attributes" to json.obj("type" to json.string("KafkaMessage__c")),
         "CRM_Topic__c" to json.string(ev.kafkaTopic),
         "CRM_Key__c" to json.string("${this.key.orgNumber}#${this.key.orgType}#${this.value.jsonHashCode}"),
