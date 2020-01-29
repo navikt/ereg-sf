@@ -1,8 +1,8 @@
 package no.nav.ereg
 
 import io.prometheus.client.CollectorRegistry
-import io.prometheus.client.Counter
-import io.prometheus.client.Summary
+import io.prometheus.client.Gauge
+import io.prometheus.client.Histogram
 import io.prometheus.client.hotspot.DefaultExports
 import mu.KotlinLogging
 
@@ -12,27 +12,27 @@ object Metrics {
 
     val cRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry
 
-    val responseLatency: Summary = Summary
+    val responseLatency: Histogram = Histogram
         .build()
-        .name("response_latency_seconds")
+        .name("response_latency_seconds_histogram")
         .help("Salesforce post response latency")
         .register()
 
-    val successfulRequest: Counter = Counter
+    val successfulRequest: Gauge = Gauge
         .build()
-        .name("successful_request_counter")
+        .name("successful_request_gauge")
         .help("No. of successful requests to Salesforce since last restart")
         .register()
 
-    val failedRequest: Counter = Counter
+    val failedRequest: Gauge = Gauge
         .build()
-        .name("failed_request_counter")
+        .name("failed_request_gauge")
         .help("No. of failed requests to Salesforce since last restart")
         .register()
 
-    val sentOrgs: Counter = Counter
+    val sentOrgs: Gauge = Gauge
         .build()
-        .name("sent_organisation_counter")
+        .name("sent_organisation_gauge")
         .labelNames("type")
         .help("No. of organisations sent to Salesforce in last work session")
         .register()

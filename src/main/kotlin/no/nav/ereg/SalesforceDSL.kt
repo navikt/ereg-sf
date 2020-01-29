@@ -18,7 +18,7 @@ import org.http4k.format.Jackson.auto
 
 private val log = KotlinLogging.logger { }
 
-private data class SFAuthorization(
+internal data class SFAuthorization(
     val access_token: String = "",
     val instance_url: String = "",
     val id: String = "",
@@ -27,11 +27,11 @@ private data class SFAuthorization(
     val signature: String = ""
 )
 
-private fun SFAuthorization.isOk(): Boolean = access_token.isNotEmpty() && instance_url.isNotEmpty()
+private fun SFAuthorization.isOk(): Boolean = access_token.isNotEmpty() && instance_url.isNotEmpty() && token_type.isNotEmpty()
 
 private fun SFAuthorization.getBaseRequest(ev: EnvVar): Request = Request(
     Method.POST, "${instance_url}${ev.sfRestEndpoint}")
-    .header("Authorization", "Bearer $access_token")
+    .header("Authorization", "$token_type $access_token")
     .header("Content-Type", "application/json;charset=UTF-8")
 
 private fun getHTTPClient(hp: String = EnvVarFactory.envVar.httpsProxy) =
@@ -47,7 +47,7 @@ private fun getHTTPClient(hp: String = EnvVarFactory.envVar.httpsProxy) =
             .build()
         ) else ApacheClient()
 
-internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject>) -> Boolean) -> Boolean): Boolean =
+internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject>) -> Boolean) -> Unit): Boolean =
     getHTTPClient().let { client ->
 
         val accessTokenRequest = Request(Method.POST, ev.sfOAuthUrl)
@@ -94,13 +94,13 @@ internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject
                     }
                     Status.UNAUTHORIZED -> {
                         // refresh sf authorization and another attempt
-                        log.info { "Unauthorized - ${response.status.description} - refresh of token and retry" }
+                        log.info { "${response.status.description} - refresh of token and retry" }
                         Metrics.failedRequest.inc()
 
                         sfAuth = getSfAuth()
                         client.invoke(sfAuth.getBaseRequest(ev).body(list.toJsonPayload(ev))).also {
                             if (it.status == Status.OK) {
-                                log.info { "Successful retry" }
+                                log.info { "Successful retry - posted ${list.size} organisations to Salesforce - ${it.status.description}" }
                                 Metrics.successfulRequest.inc()
                                 list.forEach { o -> Metrics.sentOrgs.labels(o.key.orgType.toString()).inc() }
                             } else {

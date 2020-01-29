@@ -48,7 +48,7 @@ class KafkaDSLTests : StringSpec() {
             } shouldBe false
         }
 
-        "KafkaDSL should not invoke doConsume for non authe/autho user" {
+        "KafkaDSL should invoke doConsume for non authe/autho user" {
 
             getKafkaConsumerByConfig<String, String>(
                 mapOf(
@@ -88,7 +88,7 @@ class KafkaDSLTests : StringSpec() {
                     ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
                     ConsumerConfig.GROUP_ID_CONFIG to "TEST",
                     ConsumerConfig.CLIENT_ID_CONFIG to "TEST",
-                    ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "false"
+                    ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "true"
                 ).addKafkaSecurity(kuC1.username, kuC1.password),
                 listOf(topicString)
             ) { cRecords ->
@@ -108,7 +108,7 @@ class KafkaDSLTests : StringSpec() {
                     ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
                     ConsumerConfig.GROUP_ID_CONFIG to "TEST",
                     ConsumerConfig.CLIENT_ID_CONFIG to "TEST",
-                    ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "false"
+                    ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "true"
                 ).addKafkaSecurity(kuC1.username, kuC1.password),
                 listOf(topicString),
                 fromBeginning = true
