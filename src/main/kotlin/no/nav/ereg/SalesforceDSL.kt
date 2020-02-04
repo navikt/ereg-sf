@@ -55,7 +55,7 @@ internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject
             .query("client_id", ev.sfClientID)
             .query("client_secret", ev.sfClientSecret)
             .query("username", ev.sfUsername)
-            .query("password", ev.sfPassword)
+            .query("password", ev.sfPassword) // TODO should be url encoded in case of incompatible pwd?
             .body("")
 
         // the user for getting access token must be preauthorized in Salesforce
