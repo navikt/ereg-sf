@@ -21,9 +21,6 @@ internal fun work(ev: EnvVar) {
 
     getSalesforcePost(ev) { doPost ->
 
-        // TODO to be removed - give Magnus something to work with - not to much
-        var counter = 0
-
         getKafkaConsumerByConfig<ByteArray, ByteArray>(
             mapOf(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to ev.kafkaBrokers,
@@ -42,12 +39,11 @@ internal fun work(ev: EnvVar) {
             listOf(ev.kafkaTopic)
         ) { cRecords ->
             if (!cRecords.isEmpty) {
-                counter += cRecords.count() // TODO to be removed
 
                 when (doPost(cRecords
                         .map { OrgObject(it.key().protobufSafeParseKey(), it.value().protobufSafeParseValue()) }
                         .filter { it.key.orgNumber.isNotEmpty() && it.value.orgAsJson.isNotEmpty() })) {
-                    true -> if (counter > 100) ConsumerStates.IsFinished else ConsumerStates.IsOkNoCommit
+                    true -> ConsumerStates.IsOkNoCommit
                     false -> ConsumerStates.HasIssues
                 }
             } else {
