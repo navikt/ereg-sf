@@ -58,6 +58,8 @@ internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject
             .query("password", ev.sfPassword)
             .body("")
 
+        // the user for getting access token must be preauthorized in Salesforce
+
         val getSfAuth: () -> SFAuthorization = {
             val responseLens = Body.auto<SFAuthorization>().toLens()
             val response = client.invoke(accessTokenRequest)
