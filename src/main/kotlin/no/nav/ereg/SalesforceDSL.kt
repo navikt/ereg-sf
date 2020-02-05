@@ -58,7 +58,7 @@ internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject
             .query("password", ev.sfPassword) // TODO should be url encoded in case of incompatible pwd?
             .body("")
 
-        // the user for getting access token must be preauthorized in Salesforce
+        // the user for getting access token must be pre-authorized in Salesforce
 
         val getSfAuth: () -> SFAuthorization = {
             val responseLens = Body.auto<SFAuthorization>().toLens()
@@ -73,6 +73,7 @@ internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject
                 }
             else {
                 log.error { "Failed authorization request to Salesforce - ${response.status.description}" }
+                Metrics.failedRequest.inc()
                 ServerState.state = ServerStates.SalesforceIssues
                 SFAuthorization()
             }
