@@ -43,10 +43,7 @@ internal fun work(ev: EnvVar) {
                 when (doPost(cRecords
                         .map { OrgObject(it.key().protobufSafeParseKey(), it.value().protobufSafeParseValue()) }
                         .filter { it.key.orgNumber.isNotEmpty() && it.value.orgAsJson.isNotEmpty() })) {
-                    true -> {
-                        // TODO debug code - remove limit of 50 000 underenheter
-                        if (Metrics.sentOrgs.labels("UNDERENHET").get() > 50_000) ConsumerStates.IsFinished else ConsumerStates.IsOkNoCommit
-                    }
+                    true -> ConsumerStates.IsOk
                     false -> ConsumerStates.HasIssues
                 }
             } else {
