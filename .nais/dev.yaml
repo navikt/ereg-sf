@@ -57,5 +57,5 @@ spec:
     - name: SF_RESTENDPOINT
       value: '/services/data/v47.0/composite/sobjects'
     - name: MS_BETWEEN_WORK
-      value: '14400000'
+      value: '600000'
 
