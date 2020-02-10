@@ -1,11 +1,12 @@
 apiVersion: "nais.io/v1alpha1"
 kind: "Application"
 metadata:
-  name: ereg-splitter-change
+  name: ereg-sf
   namespace: default
   labels:
     team: teamcrm
 spec:
+  webproxy: true
   image: {{ image }}
   port: 8080
   replicas:
@@ -27,41 +28,33 @@ spec:
   resources:
     limits:
       cpu: 1000m
-      memory: 4Gi
+      memory: 4096Mi
     requests:
       cpu: 100m
-      memory: 2Gi
+      memory: 2048Mi
   vault:
     enabled: true
     paths:
       - mountPath: /var/run/secrets/nais.io/vault
-        kvPath: /kv/prod/sbs/ereg-splitter-change/default
+        kvPath: /kv/prod/sbs/ereg-sf/default
       - mountPath: /var/run/secrets/nais.io/serviceuser
-        kvPath: /serviceuser/data/prod/srveregsplchg
+        kvPath: /serviceuser/data/prod/srveregsf
   env:
-    - name: KAFKA_BOOTSTRAP_SERVERS
-      value: a01apvl00145.adeo.no:8443,a01apvl00146.adeo.no:8443,a01apvl00147.adeo.no:8443,a01apvl00148.adeo.no:8443,a01apvl00149.adeo.no:8443,a01apvl00150.adeo.no:8443
+    - name: KAFKA_BROKERS
+      value: SASL_SSL://a01apvl00145.adeo.no:8443,SASL_SSL://a01apvl00146.adeo.no:8443,SASL_SSL://a01apvl00147.adeo.no:8443,SASL_SSL://a01apvl00148.adeo.no:8443,SASL_SSL://a01apvl00149.adeo.no:8443,SASL_SSL://a01apvl00150.adeo.no:8443
     - name: KAFKA_CLIENTID
-      value: ereg-splitter-change
+      value: ereg-sf
     - name: KAFKA_SECURITY
       value: 'TRUE'
     - name: KAFKA_SECPROT
-      value: SASL_PLAINTEXT
+      value: SASL_SSL
     - name: KAFKA_SASLMEC
       value: PLAIN
     - name: KAFKA_TOPIC
       value: public-ereg-cache-org-json
-    - name: EREG_UEURL
-      value: https://data.brreg.no/enhetsregisteret/api/underenheter/lastned
-    - name: EREG_UEACCEPT
-      value: application/vnd.brreg.enhetsregisteret.underenhet.v1+gzip;charset=UTF-8
-    - name:  EREG_OEURL
-      value: https://data.brreg.no/enhetsregisteret/api/enheter/lastned
-    - name: EREG_OEACCEPT
-      value: application/vnd.brreg.enhetsregisteret.enhet.v1+gzip;charset=UTF-8
-    - name: RUN_EACH_MORNING
-      value: 'TRUE'
-    - name: MAX_ATTEMPTS
-      value: '24'
-    - name: MS_BETWEEN_RETRIES
-      value: '1800000'
+    - name: SF_OAUTHURL
+      value: 'https://login.salesforce.com/services/oauth2/token'
+    - name: SF_RESTENDPOINT
+      value: '/services/data/v47.0/composite/sobjects'
+    - name: MS_BETWEEN_WORK
+      value: '600000'
