@@ -1,4 +1,4 @@
-# ereg_splitter_change
+# ereg_sf
 
 A microservice sending all 'enhetsregister' events (changes from Brønnøysund) from kafka compaction log 'public-ereg-cache-org-json' 
 to SalesForce. See companion microservice ereg-splitter-change.

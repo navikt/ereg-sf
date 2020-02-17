@@ -84,7 +84,7 @@ private fun <K, V> KafkaConsumer<K, V>.pollAndConsumptionIsOk(doConsume: (Consum
                     false
                 }
                 ConsumerStates.IsFinished -> {
-                    log.warn { "Consumer logic requests stop of consumption" }
+                    log.info { "Consumer logic requests stop of consumption" }
                     false
                 }
             }
