@@ -22,6 +22,7 @@ plugins {
     id 'org.jmailen.kotlinter' version '2.2.0'
     id 'com.github.ben-manes.versions' version '0.27.0'
     id 'com.github.johnrengelman.shadow' version '5.1.0'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.3.61'
 }
 
 group 'no.nav.ereg'
@@ -75,7 +76,6 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutine"
 
     implementation "org.http4k:http4k-core:$http4k_version"
-    //implementation "org.http4k:http4k-server-jetty:$http4k_version"
     implementation "org.http4k:http4k-server-netty:$http4k_version"
     implementation "org.http4k:http4k-client-apache:$http4k_version"
     implementation "org.http4k:http4k-format-jackson:$http4k_version"

@@ -51,5 +51,7 @@ internal fun work(ev: EnvVar) {
                 ConsumerStates.IsFinished
             }
         }
+    }.also { gotPost ->
+        if (gotPost && ServerState.isOk()) Metrics.failedRequest.clear()
     }
 }
