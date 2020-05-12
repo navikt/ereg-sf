@@ -5,7 +5,6 @@ import mu.KotlinLogging
 fun main() {
 
     val log = KotlinLogging.logger {}
-
     log.info { "Starting" }
 
     log.info { "Checking environment variables" }
@@ -25,6 +24,5 @@ fun main() {
     }
 
     Bootstrap.start()
-
     log.info { "Finished!" }
 }
