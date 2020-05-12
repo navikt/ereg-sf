@@ -114,7 +114,7 @@ internal fun getSalesforcePost(ev: EnvVar, doSomething: (doPost: (List<OrgObject
                         }.status == Status.OK
                     }
                     else -> {
-                        log.error { "Couldn't post ${list.size} organisations to Salesforce - ${response.status.description}" }
+                        log.error { "Couldn't post ${list.size} organisations to Salesforce - ${response.status.description} - ${response.bodyString()}" }
                         ServerState.state = ServerStates.SalesforceIssues
                         Metrics.failedRequest.inc()
                         false
