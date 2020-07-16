@@ -27,7 +27,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-wrapper-
       - name: Build and run tests
-        run: ./gradlew clean build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GPR_READ_EREG_SF }}
+        run: ./gradlew clean build --info
 
   build:
     name: Build and push Docker container
@@ -52,6 +54,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-wrapper-
       - name: Build JAR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GPR_READ_EREG_SF }}
         run: ./gradlew clean build shadowJar -x test
       - name: Build and publish Docker image
         env:
@@ -72,15 +76,15 @@ jobs:
           CLUSTER: dev-sbs
           RESOURCE: .nais/dev.yaml
 
-  deploy-prod:
-    name: Deploy to NAIS prod
-    needs: deploy-dev
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: nais/deploy/actions/deploy@v1
-        env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          CLUSTER: prod-sbs
-          RESOURCE: .nais/prod.yaml
+#  deploy-prod:
+#    name: Deploy to NAIS prod
+#    needs: deploy-dev
+#    if: github.ref == 'refs/heads/master'
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v1
+#      - uses: nais/deploy/actions/deploy@v1
+#        env:
+#          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+#          CLUSTER: prod-sbs
+#          RESOURCE: .nais/prod.yaml

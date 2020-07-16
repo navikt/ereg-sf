@@ -52,9 +52,13 @@ spec:
       value: PLAIN
     - name: KAFKA_TOPIC
       value: public-ereg-cache-org-json
-    - name: SF_OAUTHURL
-      value: 'https://login.salesforce.com/services/oauth2/token'
-    - name: SF_RESTENDPOINT
-      value: '/services/data/v47.0/composite/sobjects'
     - name: MS_BETWEEN_WORK
       value: '600000'
+    - name: SF_INSTTYPE
+      value: 'PRODUCTION'
+    - name: SF_VERSION
+      value: 'v48.0'
+    - name: SF_TOKENHOST
+      value: 'https://login.salesforce.com'
+    - name: VAULT_INSTANCE
+      value: PRODUCTION

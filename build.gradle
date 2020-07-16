@@ -1,7 +1,8 @@
 buildscript {
-    ext.kotlin_version = '1.3.61'
-    ext.kotlin_coroutine = '1.3.3'
-    ext.http4k_version = '3.217.0'
+    ext.kotlin_version = '1.3.72'
+    ext.kotlin_coroutine = '1.3.5'
+    ext.kotlin_serialization = '0.20.0'
+    ext.http4k_version = '3.244.0'
     ext.kafka_version = '2.3.1'
     ext.embedded_kafka = '2.3.0'
     ext.grpc_version = '1.26.0'
@@ -11,7 +12,9 @@ buildscript {
     ext.log4j_version = '1.7.25'
     ext.logstash_encoder_version = '6.3'
     ext.prometheus_version = '0.8.0'
-    ext.junit5_version = '3.4.2'
+    ext.kotest_version = '4.0.3'
+
+    ext.crm_utilities_version = '0.77'
 }
 
 plugins {
@@ -64,6 +67,18 @@ repositories {
     maven {
         url "http://packages.confluent.io/maven"
     }
+
+    ["maven-release", "crm-utilities"].each { repo ->
+        String token = System.getenv("GITHUB_TOKEN") ?: project.findProperty("githubPassword")
+        if (!token) throw new NullPointerException("Missing token, you have to set GITHUB_TOKEN or githubPassword")
+        maven {
+            url = uri("https://maven.pkg.github.com/navikt/$repo")
+            credentials {
+                username = 'x-access-token'
+                password = token
+            }
+        }
+    }
 }
 
 configurations {
@@ -72,8 +87,13 @@ configurations {
 
 
 dependencies {
+    implementation platform('org.jetbrains.kotlin:kotlin-bom')
+
+    implementation "no.nav.sf.library:crm-utilities:$crm_utilities_version"
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutine"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlin_serialization"
 
     implementation "org.http4k:http4k-core:$http4k_version"
     implementation "org.http4k:http4k-server-netty:$http4k_version"
@@ -93,8 +113,11 @@ dependencies {
     implementation "io.prometheus:simpleclient_common:$prometheus_version"
     implementation "io.prometheus:simpleclient_hotspot:$prometheus_version"
 
-    testImplementation "io.kotlintest:kotlintest-runner-junit5:$junit5_version"
+    testImplementation "io.kotest:kotest-runner-junit5-jvm:$kotest_version"
+    testImplementation "io.kotest:kotest-assertions-core-jvm:$kotest_version"
+
     testImplementation "no.nav:kafka-embedded-env:$embedded_kafka"
+    testImplementation "org.http4k:http4k-server-ktorcio:$http4k_version"
 }
 
 test {
@@ -105,6 +128,8 @@ sourceSets {
     main.kotlin.srcDirs += 'src/main/kotlin'
     test.kotlin.srcDirs += 'src/test/kotlin'
 }
+
+project.gradle.startParameter.excludedTaskNames.add('extractIncludeTestProto')
 
 protobuf {
     protoc { artifact = 'com.google.protobuf:protoc:3.11.0' }

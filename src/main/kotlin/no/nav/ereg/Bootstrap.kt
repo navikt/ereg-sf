@@ -1,36 +1,64 @@
 package no.nav.ereg
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import no.nav.sf.library.AnEnvironment
+import no.nav.sf.library.PrestopHook
+import no.nav.sf.library.ShutdownHook
+import no.nav.sf.library.enableNAISAPI
+
+private const val EV_bootstrapWaitTime = "MS_BETWEEN_WORK" // default to 10 minutes
+private val bootstrapWaitTime = AnEnvironment.getEnvOrDefault(EV_bootstrapWaitTime, "60000").toLong()
 
 object Bootstrap {
 
     private val log = KotlinLogging.logger { }
 
-    fun start(ev: EnvVar = EnvVarFactory.envVar) {
-
-        ShutdownHook.reset()
-
-        NaisDSL.enabled { conditionalSchedule(ev) } // end of use for NAISDSL - shutting down REST API
+    fun start(ws: WorkSettings = WorkSettings()) {
+        log.info { "Starting" }
+        enableNAISAPI { loop(ws) }
+        log.info { "Finished!" }
     }
 
-    private tailrec fun conditionalSchedule(ev: EnvVar) {
-
-        // some resets before next attempt/work session
-        ServerState.reset()
-        Metrics.sessionReset()
-        work(ev) // ServerState will be updated according to any issues
-        wait(ev)
-
-        if (!ShutdownHook.isActive()) conditionalSchedule(ev)
+    private tailrec fun loop(ws: WorkSettings) {
+        val stop = ShutdownHook.isActive() || PrestopHook.isActive()
+        when {
+            stop -> Unit
+            !stop -> loop(work(ws)
+                .let { prevWS ->
+                    // re-read of vault entries in case of changes, keeping relevant access tokens and static env. vars.
+                    prevWS.first.copy(
+                        sfClient = prevWS.first.sfClient.copyRelevant()
+                    )
+                }
+                .also { conditionalWait() }
+            )
+        }
     }
 
-    private fun wait(ev: EnvVar) {
-        val msDelay = ev.msBetweenWork
-        log.info { "Will wait $msDelay ms before starting all over" }
-        runCatching { runBlocking { delay(msDelay) } }
-            .onSuccess { log.info { "waiting completed" } }
-            .onFailure { log.info { "waiting interrupted" } }
-    }
+    private fun conditionalWait(ms: Long = bootstrapWaitTime) =
+        runBlocking {
+
+            log.info { "Will wait $ms ms before starting all over" }
+
+            val cr = launch {
+                runCatching { delay(ms) }
+                    .onSuccess { log.info { "waiting completed" } }
+                    .onFailure { log.info { "waiting interrupted" } }
+            }
+
+            tailrec suspend fun loop(): Unit = when {
+                cr.isCompleted -> Unit
+                ShutdownHook.isActive() || PrestopHook.isActive() -> cr.cancel()
+                else -> {
+                    delay(250L)
+                    loop()
+                }
+            }
+
+            loop()
+            cr.join()
+        }
 }
