@@ -51,7 +51,7 @@ spec:
     - name: KAFKA_SASLMEC
       value: PLAIN
     - name: KAFKA_TOPIC
-      value: public-ereg-cache-org-json
+      value: privat-whatever
     - name: MS_BETWEEN_WORK
       value: '600000'
     - name: SF_INSTANCE
