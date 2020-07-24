@@ -38,7 +38,7 @@ spec:
       - mountPath: /var/run/secrets/nais.io/vault
         kvPath: /kv/preprod/sbs/ereg-sf/default
       - mountPath: /var/run/secrets/nais.io/serviceuser
-        kvPath: /serviceuser/data/dev/srveregsf
+        kvPath: /serviceuser/data/dev/srvwhatever
   env:
     - name: KAFKA_BROKERS
       value: SASL_SSL://b27apvl00045.preprod.local:8443,SASL_SSL://b27apvl00046.preprod.local:8443,SASL_SSL://b27apvl00047.preprod.local:8443
@@ -62,4 +62,3 @@ spec:
       value: 'v48.0'
     - name: VAULT_INSTANCE
       value: PREPROD
-
