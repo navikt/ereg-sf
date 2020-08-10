@@ -54,7 +54,7 @@ spec:
       value: public-ereg-cache-org-json
     - name: MS_BETWEEN_WORK
       value: '600000'
-    - name: SF_INSTTYPE
+    - name: SF_INSTANCE
       value: 'PRODUCTION'
     - name: SF_VERSION
       value: 'v48.0'
