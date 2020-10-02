@@ -18,7 +18,10 @@ object Bootstrap {
 
     fun start(ws: WorkSettings = WorkSettings()) {
         log.info { "Starting" }
-        enableNAISAPI { loop(ws) }
+        enableNAISAPI {
+            investigate(ws)
+            loop(ws)
+        }
         log.info { "Finished!" }
     }
 

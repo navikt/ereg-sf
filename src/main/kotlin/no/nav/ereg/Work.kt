@@ -11,6 +11,7 @@ import no.nav.sf.library.encodeB64
 import no.nav.sf.library.isSuccess
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
+import org.apache.kafka.common.serialization.StringDeserializer
 
 private val log = KotlinLogging.logger {}
 
@@ -25,6 +26,10 @@ data class WorkSettings(
     val kafkaConfig: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java
+    ),
+    val kafkaConfigAlternative: Map<String, Any> = AKafkaConsumer.configAlternativeBase + mapOf<String, Any>(
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java
     ),
     val sfClient: SalesforceClient = SalesforceClient()
 )
@@ -50,6 +55,11 @@ data class WMetrics(
         .build()
         .name("producer_issues")
         .help("producer issues")
+        .register(),
+    val noOfInvestigatedEvents: Gauge = Gauge
+        .build()
+        .name("kafka_investigated_event_gauge")
+        .help("No. of investigated activity events from kafka since last work session")
         .register()
 ) {
     fun clearAll() {
