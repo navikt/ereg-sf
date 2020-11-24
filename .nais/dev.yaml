@@ -52,6 +52,8 @@ spec:
       value: PLAIN
     - name: KAFKA_TOPIC
       value: privat-whatever
+    - name: KAFKA_TOPIC_TOMBSTONES
+      value: privat-whatever-tombstones
     - name: MS_BETWEEN_WORK
       value: '600000'
     - name: SF_INSTANCE

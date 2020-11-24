@@ -52,6 +52,8 @@ spec:
       value: PLAIN
     - name: KAFKA_TOPIC
       value: public-ereg-cache-org-json
+    - name: KAFKA_TOPIC_TOMBSTONES
+      value: public-ereg-cache-org-tombstones
     - name: MS_BETWEEN_WORK
       value: '600000'
     - name: SF_INSTANCE

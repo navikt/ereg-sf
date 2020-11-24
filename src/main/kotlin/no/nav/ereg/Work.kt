@@ -3,6 +3,7 @@ package no.nav.ereg
 import io.prometheus.client.Gauge
 import mu.KotlinLogging
 import no.nav.sf.library.AKafkaConsumer
+import no.nav.sf.library.AnEnvironment
 import no.nav.sf.library.KafkaConsumerStates
 import no.nav.sf.library.KafkaMessage
 import no.nav.sf.library.SFsObjectRest
@@ -13,6 +14,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 
 private val log = KotlinLogging.logger {}
+
+private const val EV_kafka_topic_tombstones = "KAFKA_TOPIC_TOMBSTONES"
 
 sealed class ExitReason {
     object NoSFClient : ExitReason()
@@ -40,6 +43,11 @@ data class WMetrics(
         .name("kafka_consumed_event_gauge")
         .help("No. of consumed records from kafka since last work session")
         .register(),
+    val noOfConsumedTombstones: Gauge = Gauge
+            .build()
+            .name("kafka_consumed_tombstones_gauge")
+            .help("kafka_consumed_tombstones_gauge")
+            .register(),
     val noOfPostedEvents: Gauge = Gauge
         .build()
         .name("sf_posted_event_gauge")
@@ -63,6 +71,7 @@ data class WMetrics(
 ) {
     fun clearAll() {
         noOfConsumedEvents.clear()
+        noOfConsumedTombstones.clear()
         noOfPostedEvents.clear()
         consumerIssues.clear()
         producerIssues.clear()
@@ -81,7 +90,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
     ws.sfClient.enablesObjectPost { postActivities ->
 
         exitReason = ExitReason.NoKafkaClient
-        val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray>(
+        val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray?>(
             config = ws.kafkaConfig,
             fromBeginning = false
         )
@@ -108,18 +117,29 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             }
 
             val topic = kafkaConsumer.topics.first()
+            val topicKafkaTombstones = AnEnvironment.getEnvOrDefault(EV_kafka_topic_tombstones, "NOT FOUND Kafka topic tombstones")
 
             val orgObjects = orgObjectBases.filterIsInstance<OrgObject>()
                 .filter { it.key.orgNumber.isNotEmpty() && it.value.orgAsJson.isNotEmpty() }
 
+            val orgTombStones = orgObjectBases.filterIsInstance<OrgObjectTombstone>()
+                    .filter { it.key.orgNumber.isNotEmpty() }
+
+            workMetrics.noOfConsumedTombstones.inc(orgTombStones.size.toDouble())
+
             val body = SFsObjectRest(
-                records = orgObjects.map {
-                    KafkaMessage(
-                        topic = topic,
-                        key = "${it.key.orgNumber}#${it.key.orgType}#${it.value.jsonHashCode}",
-                        value = it.value.orgAsJson.encodeB64()
-                    )
-                }
+                    records = orgObjects.map {
+                        KafkaMessage(
+                                topic = topic,
+                                key = "${it.key.orgNumber}#${it.key.orgType}#${it.value.jsonHashCode}",
+                                value = it.value.orgAsJson.encodeB64()
+                        )
+                    } + orgTombStones.map {
+                        KafkaMessage(
+                                topic = topicKafkaTombstones,
+                                key = "${it.key.orgNumber}",
+                                value = "${it.key.orgNumber}")
+                    }
             ).toJson()
 
             when (postActivities(body).isSuccess()) {
@@ -134,7 +154,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             }
         }
     }
-    log.info { "bootstrap work session finished - $exitReason" }
+    log.info { "bootstrap work session finished - $exitReason . No of consumed total events ${workMetrics.noOfConsumedEvents.get().toInt()} of which tombstones: ${workMetrics.noOfConsumedTombstones.get().toInt()}" }
 
     return Pair(ws, exitReason)
 }
