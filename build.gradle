@@ -14,7 +14,7 @@ buildscript {
     ext.prometheus_version = '0.8.0'
     ext.kotest_version = '4.0.3'
 
-    ext.crm_utilities_version = '0.97'
+    ext.crm_utilities_version = '0.109'
 }
 
 plugins {
