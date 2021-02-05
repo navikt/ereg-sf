@@ -4,8 +4,10 @@ import io.prometheus.client.Gauge
 import mu.KotlinLogging
 import no.nav.sf.library.AKafkaConsumer
 import no.nav.sf.library.AnEnvironment
+import no.nav.sf.library.EV_kafkaClientID
 import no.nav.sf.library.KafkaConsumerStates
 import no.nav.sf.library.KafkaMessage
+import no.nav.sf.library.PROGNAME
 import no.nav.sf.library.SFsObjectRest
 import no.nav.sf.library.SalesforceClient
 import no.nav.sf.library.encodeB64
@@ -29,10 +31,13 @@ data class WorkSettings(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java
     ),
-    val kafkaConfigAlternative: Map<String, Any> = AKafkaConsumer.configAlternativeBase + mapOf<String, Any>(
+    val kafkaConfigAlternative: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
+            ConsumerConfig.GROUP_ID_CONFIG to AnEnvironment.getEnvOrDefault(EV_kafkaClientID, PROGNAME) + "_init",
+            ConsumerConfig.CLIENT_ID_CONFIG to AnEnvironment.getEnvOrDefault(EV_kafkaClientID, PROGNAME) + "_init"
     ),
+
     val sfClient: SalesforceClient = SalesforceClient()
 )
 
