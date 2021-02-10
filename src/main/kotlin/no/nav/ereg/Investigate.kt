@@ -41,7 +41,7 @@ internal fun investigate(ws: WorkSettings) {
         }
         val orgObjects = orgObjectBases.filterIsInstance<OrgObject>()
                 .filter { it.key.orgNumber.isNotEmpty() && it.value.orgAsJson.isNotEmpty() }
-        orgObjects.filter { o -> o.key.orgNumber == "922869820" }.forEach {
+        orgObjects.filter { o -> o.key.orgNumber == "132760304" }.forEach {
             log.info { "Found chosen org entry in cache" }
             recordInCache.add(it.value.orgAsJson)
         }
