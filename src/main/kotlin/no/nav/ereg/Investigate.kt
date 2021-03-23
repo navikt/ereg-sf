@@ -1,6 +1,10 @@
 package no.nav.ereg
 
 import java.io.File
+import java.io.FileOutputStream
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import mu.KotlinLogging
 import no.nav.sf.library.AKafkaConsumer
 import no.nav.sf.library.AnEnvironment
@@ -11,6 +15,20 @@ private val log = KotlinLogging.logger {}
 
 const val EV_kafkaConsumerTopic = "KAFKA_TOPIC"
 val kafkaEregTopic = AnEnvironment.getEnvOrDefault(EV_kafkaConsumerTopic, "$PROGNAME-consumer")
+
+interface Investigate {
+    companion object {
+        fun writeText(text: String, append: Boolean = false) {
+            val timeStamp = DateTimeFormatter
+                .ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")
+                .withZone(ZoneOffset.systemDefault())
+                .format(Instant.now())
+            FileOutputStream("/tmp/investigate", append).bufferedWriter().use { writer ->
+                writer.write("$timeStamp : $text \n")
+            }
+        }
+    }
+}
 
 internal fun investigate(ws: WorkSettings) {
 

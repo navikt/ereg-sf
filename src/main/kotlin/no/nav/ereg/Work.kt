@@ -85,6 +85,8 @@ data class WMetrics(
 
 val workMetrics = WMetrics()
 
+var localLogExample = false
+
 internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
     log.info { "bootstrap work session starting" }
@@ -146,6 +148,11 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                                 value = "${it.key.orgNumber}")
                     }
             ).toJson()
+
+            if (!localLogExample) {
+                localLogExample = true
+                Investigate.writeText("Body of a post:\n$body")
+            }
 
             when (postActivities(body).isSuccess()) {
                 true -> {
