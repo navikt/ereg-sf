@@ -150,8 +150,22 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             ).toJson()
 
             if (!localLogExample) {
+                val bodyReadable = SFsObjectRest(
+                    records = orgObjects.map {
+                        KafkaMessage(
+                            topic = topic,
+                            key = "${it.key.orgNumber}#${it.key.orgType}#${it.value.jsonHashCode}",
+                            value = it.value.orgAsJson
+                        )
+                    } + orgTombStones.map {
+                        KafkaMessage(
+                            topic = topicKafkaTombstones,
+                            key = "${it.key.orgNumber}",
+                            value = "${it.key.orgNumber}")
+                    }
+                ).toJson()
                 localLogExample = true
-                Investigate.writeText("Body of a post:\n$body")
+                Investigate.writeText("Body of a post:\n$bodyReadable")
             }
 
             when (postActivities(body).isSuccess()) {
