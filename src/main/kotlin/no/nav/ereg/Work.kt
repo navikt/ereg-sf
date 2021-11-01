@@ -89,6 +89,7 @@ val workMetrics = WMetrics()
 
 internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
+    var latestOffset = -1L
     log.info { "bootstrap work session starting" }
     workMetrics.clearAll()
 
@@ -131,6 +132,10 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
             val orgTombStones = orgObjectBases.filterIsInstance<OrgObjectTombstone>()
                     .filter { it.key.orgNumber.isNotEmpty() }
+
+            consumerRecords.lastOrNull()?.let {
+                latestOffset = it.offset()
+            }
 
             workMetrics.noOfConsumedTombstones.inc(orgTombStones.size.toDouble())
 
@@ -183,7 +188,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             }
         }
     }
-    log.info { "bootstrap work session finished - $exitReason . No of consumed total events ${workMetrics.noOfConsumedEvents.get().toInt()} of which tombstones: ${workMetrics.noOfConsumedTombstones.get().toInt()}" }
+    log.info { "bootstrap work session finished - $exitReason . No of consumed total events ${workMetrics.noOfConsumedEvents.get().toInt()} of which tombstones: ${workMetrics.noOfConsumedTombstones.get().toInt()}, latest offset $latestOffset" }
 
     return Pair(ws, exitReason)
 }
