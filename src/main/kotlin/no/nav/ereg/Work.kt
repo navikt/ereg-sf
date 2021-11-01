@@ -85,7 +85,7 @@ data class WMetrics(
 
 val workMetrics = WMetrics()
 
-var localLogExample = false
+// var localLogExample = false
 
 internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
@@ -149,6 +149,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                     }
             ).toJson()
 
+            /*
             if (!localLogExample) {
                 val bodyReadable = SFsObjectRest(
                     records = orgObjects.map {
@@ -167,6 +168,8 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                 localLogExample = true
                 Investigate.writeText("Body of a post:\n$bodyReadable")
             }
+
+             */
 
             when (postActivities(body).isSuccess()) {
                 true -> {
