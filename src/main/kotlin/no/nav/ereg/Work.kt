@@ -66,7 +66,7 @@ data class WMetrics(
     val producerIssues: Gauge = Gauge
         .build()
         .name("producer_issues")
-        .help("producer issues")
+        .help("producer issues ")
         .register(),
     val noOfInvestigatedEvents: Gauge = Gauge
         .build()
