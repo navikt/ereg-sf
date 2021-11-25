@@ -90,7 +90,7 @@ val workMetrics = WMetrics()
 internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
     var latestOffset = -1L
-    log.info { "bootstrap work session starting" }
+    log.info { "bootstrap work session starting client ${ws.sfClient}" }
     workMetrics.clearAll()
 
     var exitReason: ExitReason = ExitReason.NoSFClient

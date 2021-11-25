@@ -32,13 +32,6 @@ spec:
     requests:
       cpu: 100m
       memory: 2048Mi
-#  vault:
-#    enabled: true
-#    paths:
-#      - mountPath: /var/run/secrets/nais.io/vault
-#        kvPath: /kv/prod/sbs/ereg-sf/default
-#      - mountPath: /var/run/secrets/nais.io/serviceuser
-#        kvPath: /serviceuser/data/prod/srveregsf
   accessPolicy:
     outbound:
       external:
