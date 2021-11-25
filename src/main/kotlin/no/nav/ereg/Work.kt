@@ -71,7 +71,7 @@ data class WMetrics(
     val noOfInvestigatedEvents: Gauge = Gauge
         .build()
         .name("kafka_investigated_event_gauge")
-        .help("No. of investigated activity events from kafka since last work session")
+        .help("No. of investigated activity events from kafka since last work session ")
         .register()
 ) {
     fun clearAll() {
