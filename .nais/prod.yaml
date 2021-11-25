@@ -39,6 +39,11 @@ spec:
 #        kvPath: /kv/prod/sbs/ereg-sf/default
 #      - mountPath: /var/run/secrets/nais.io/serviceuser
 #        kvPath: /serviceuser/data/prod/srveregsf
+  accessPolicy:
+    outbound:
+      external:
+        - host: login.salesforce.com
+        - host: navdialog.my.salesforce.com
   envFrom:
     - secret: ereg-sf
   filesFrom:
