@@ -31,6 +31,7 @@ interface Investigate {
 }
 
 internal fun investigate(ws: WorkSettings) {
+    workMetrics.noOfInvestigatedEvents.clear()
     val lastFiveKeys: MutableList<String> = mutableListOf()
     val lastFiveKeysPattern: MutableList<String> = mutableListOf("912477746", "829488442", "929521471", "929628314", "929745086")
 
@@ -62,8 +63,14 @@ internal fun investigate(ws: WorkSettings) {
         orgObjectBases.forEach {
             if (it is OrgObject) {
                 lastFiveKeys.add(it.key.orgNumber)
+                if (lastFiveKeysPattern.contains(it.key.orgNumber)) {
+                    log.info { "Investigate Key match ${it.key.orgNumber} object" }
+                }
             } else if (it is OrgObjectTombstone) {
                 lastFiveKeys.add(it.key.orgNumber)
+                if (lastFiveKeysPattern.contains(it.key.orgNumber)) {
+                    log.info { "Investigate Key match ${it.key.orgNumber} tombstone" }
+                }
             } else {
                 log.error { "Unknown data on cache queue" }
             }
@@ -89,7 +96,7 @@ internal fun investigate(ws: WorkSettings) {
         KafkaConsumerStates.IsOk
     }
 
-    log.info { "Investigate run done" }
+    log.info { "Investigate run done ${workMetrics.noOfInvestigatedEvents.get().toInt()} records examined" }
     File("/tmp/lastfivekeys").writeText(lastFiveKeys.joinToString("\n"))
 
     /*
