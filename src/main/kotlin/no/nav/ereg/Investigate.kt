@@ -31,13 +31,13 @@ interface Investigate {
 }
 
 internal fun investigate(ws: WorkSettings) {
-
     val lastFiveKeys: MutableList<String> = mutableListOf()
+    val lastFiveKeysPattern: MutableList<String> = mutableListOf("912477746", "829488442", "929521471", "929628314", "929745086")
 
     val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray>(
-            config = ws.kafkaConfigAlternative, // Separate clientId - do not affect offset of normal read
-            fromBeginning = true,
-            topics = listOf(kafkaEregTopic)
+        config = ws.kafkaConfigGcp, // Separate clientId - do not affect offset of normal read
+        fromBeginning = true,
+        topics = listOf(kafkaCacheTopicGcp)
     )
 
     val recordInCache: MutableList<String> = mutableListOf()
@@ -69,6 +69,11 @@ internal fun investigate(ws: WorkSettings) {
             }
             if (lastFiveKeys.size > 5) {
                 lastFiveKeys.removeAt(0)
+            }
+
+            if (lastFiveKeys.size == 5 && lastFiveKeys[0] == lastFiveKeysPattern[0] && lastFiveKeys[1] == lastFiveKeysPattern[1] && lastFiveKeys[2] == lastFiveKeysPattern[2] && lastFiveKeys[3] == lastFiveKeysPattern[3]) {
+                log.info { "Found key pattern" }
+                File("/tmp/found").appendText("Found key pattern\n")
             }
         }
         /*

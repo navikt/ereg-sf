@@ -5,6 +5,7 @@ import mu.KotlinLogging
 import no.nav.sf.library.AKafkaConsumer
 import no.nav.sf.library.AnEnvironment
 import no.nav.sf.library.EV_kafkaClientID
+import no.nav.sf.library.KAFKA_LOCAL
 import no.nav.sf.library.KafkaConsumerStates
 import no.nav.sf.library.KafkaMessage
 import no.nav.sf.library.PROGNAME
@@ -13,6 +14,7 @@ import no.nav.sf.library.SalesforceClient
 import no.nav.sf.library.encodeB64
 import no.nav.sf.library.isSuccess
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 
 private val log = KotlinLogging.logger {}
@@ -26,18 +28,38 @@ sealed class ExitReason {
     object Work : ExitReason()
 }
 
+val kafkaCacheTopicGcp = "team-dialog.ereg-cache"
+
+const val EV_kafkaKeystorePath = "KAFKA_KEYSTORE_PATH"
+const val EV_kafkaCredstorePassword = "KAFKA_CREDSTORE_PASSWORD"
+const val EV_kafkaTruststorePath = "KAFKA_TRUSTSTORE_PATH"
+
+fun fetchEnv(env: String): String {
+    return AnEnvironment.getEnvOrDefault(env, "$env missing")
+}
+
 data class WorkSettings(
     val kafkaConfig: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
+        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to AnEnvironment.getEnvOrDefault("KAFKA_BROKERS_ON_PREM", KAFKA_LOCAL)
     ),
     val kafkaConfigAlternative: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
-            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
-            ConsumerConfig.GROUP_ID_CONFIG to AnEnvironment.getEnvOrDefault(EV_kafkaClientID, PROGNAME) + "_init",
-            ConsumerConfig.CLIENT_ID_CONFIG to AnEnvironment.getEnvOrDefault(EV_kafkaClientID, PROGNAME) + "_init"
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
+        ConsumerConfig.GROUP_ID_CONFIG to AnEnvironment.getEnvOrDefault(EV_kafkaClientID, PROGNAME) + "_init",
+        ConsumerConfig.CLIENT_ID_CONFIG to AnEnvironment.getEnvOrDefault(EV_kafkaClientID, PROGNAME) + "_init",
+        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to AnEnvironment.getEnvOrDefault("KAFKA_BROKERS_ON_PREM", KAFKA_LOCAL)
     ),
-
+    val kafkaConfigGcp: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
+        "security.protocol" to "SSL",
+        SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG to fetchEnv(EV_kafkaKeystorePath),
+        SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG to fetchEnv(EV_kafkaCredstorePassword),
+        SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG to fetchEnv(EV_kafkaTruststorePath),
+        SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG to fetchEnv(EV_kafkaCredstorePassword)
+    ),
     val sfClient: SalesforceClient = SalesforceClient()
 )
 
