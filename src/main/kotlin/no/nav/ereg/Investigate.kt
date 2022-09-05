@@ -32,6 +32,8 @@ interface Investigate {
 
 internal fun investigate(ws: WorkSettings) {
 
+    val lastFiveKeys: MutableList<String> = mutableListOf()
+
     val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray>(
             config = ws.kafkaConfigAlternative, // Separate clientId - do not affect offset of normal read
             fromBeginning = true,
@@ -57,6 +59,19 @@ internal fun investigate(ws: WorkSettings) {
                     log.error { "Investigate - Protobuf parsing issue for offset ${it.offset()} in partition ${it.partition()}" }
             }
         }
+        orgObjectBases.forEach {
+            if (it is OrgObject) {
+                lastFiveKeys.add(it.key.orgNumber)
+            } else if (it is OrgObjectTombstone) {
+                lastFiveKeys.add(it.key.orgNumber)
+            } else {
+                log.error { "Unknown data on cache queue" }
+            }
+            if (lastFiveKeys.size > 5) {
+                lastFiveKeys.removeAt(0)
+            }
+        }
+        /*
         val orgObjects = orgObjectBases.filterIsInstance<OrgObject>()
                 .filter { it.key.orgNumber.isNotEmpty() && it.value.orgAsJson.isNotEmpty() }
         orgObjects.filter { o -> o.key.orgNumber == "132760304" }.forEach {
@@ -64,8 +79,15 @@ internal fun investigate(ws: WorkSettings) {
             recordInCache.add(it.value.orgAsJson)
         }
 
+         */
+
         KafkaConsumerStates.IsOk
     }
+
+    log.info { "Investigate run done" }
+    File("/tmp/lastfivekeys").writeText(lastFiveKeys.joinToString("\n"))
+
+    /*
     var msg: String = "Not found"
     if (recordInCache.isNotEmpty()) {
         msg = ""
@@ -75,4 +97,6 @@ internal fun investigate(ws: WorkSettings) {
     log.info { "Attempt file storage" }
     File("/tmp/investigate").writeText("Test output result: $msg")
     log.info { "File storage done" }
+
+     */
 }
