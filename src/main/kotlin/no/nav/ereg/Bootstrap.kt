@@ -29,15 +29,16 @@ object Bootstrap {
         val stop = ShutdownHook.isActive() || PrestopHook.isActive()
         when {
             stop -> Unit
-            !stop -> loop(work(ws)
+            !stop -> conditionalWait() /*loop(work(ws)
+
                 .let { prevWS ->
                     // re-read of vault entries in case of changes, keeping relevant access tokens and static env. vars.
                     prevWS.first.copy(
                         sfClient = prevWS.first.sfClient.copyRelevant()
                     )
                 }
-                .also { conditionalWait() }
-            )
+                .also { conditionalWait() }*/
+            // )
         }
     }
 

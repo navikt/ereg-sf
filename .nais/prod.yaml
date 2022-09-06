@@ -54,9 +54,11 @@ spec:
       value: SASL_SSL
     - name: KAFKA_SASLMEC
       value: PLAIN
-    - name: KAFKA_TOPIC
+    - name: KAFKA_TOPIC_CACHE
+      value: team-dialog.ereg-cache
+    - name: KAFKA_TOPIC # Only what is sent to SF for now
       value: public-ereg-cache-org-json
-    - name: KAFKA_TOPIC_TOMBSTONES
+    - name: KAFKA_TOPIC_TOMBSTONES # Only what is sent to SF for now
       value: public-ereg-cache-org-tombstones
     - name: MS_BETWEEN_WORK
       value: '600000'

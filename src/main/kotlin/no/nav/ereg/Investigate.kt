@@ -34,12 +34,13 @@ internal fun investigate(ws: WorkSettings) {
     workMetrics.noOfInvestigatedEvents.clear()
     var hasReadFromCache = false
     val lastFiveKeys: MutableList<String> = mutableListOf()
+    val lastFiveKeysAndType: MutableList<String> = mutableListOf()
     val lastFiveKeysPattern: MutableList<String> = mutableListOf("912477746", "829488442", "929521471", "929628314", "929745086")
 
     val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray>(
         config = ws.kafkaConfigGcp, // Separate clientId - do not affect offset of normal read
-        fromBeginning = true,
-        topics = listOf(kafkaCacheTopicGcp)
+        fromBeginning = true // ,
+        // topics = listOf(kafkaCacheTopicGcp)
     )
 
     val recordInCache: MutableList<String> = mutableListOf()
@@ -70,11 +71,13 @@ internal fun investigate(ws: WorkSettings) {
         orgObjectBases.forEach {
             if (it is OrgObject) {
                 lastFiveKeys.add(it.key.orgNumber)
+                lastFiveKeysAndType.add("${it.key.orgNumber} OBJECT")
                 if (lastFiveKeysPattern.contains(it.key.orgNumber)) {
                     log.info { "Investigate Key match ${it.key.orgNumber} object" }
                 }
             } else if (it is OrgObjectTombstone) {
                 lastFiveKeys.add(it.key.orgNumber)
+                lastFiveKeysAndType.add("${it.key.orgNumber} TOMBSTONE")
                 if (lastFiveKeysPattern.contains(it.key.orgNumber)) {
                     log.info { "Investigate Key match ${it.key.orgNumber} tombstone" }
                 }
@@ -83,6 +86,7 @@ internal fun investigate(ws: WorkSettings) {
             }
             if (lastFiveKeys.size > 5) {
                 lastFiveKeys.removeAt(0)
+                lastFiveKeysAndType.removeAt(0)
             }
 
             if (lastFiveKeys.size == 5 && lastFiveKeys[0] == lastFiveKeysPattern[0] && lastFiveKeys[1] == lastFiveKeysPattern[1] && lastFiveKeys[2] == lastFiveKeysPattern[2] && lastFiveKeys[3] == lastFiveKeysPattern[3]) {
@@ -105,6 +109,7 @@ internal fun investigate(ws: WorkSettings) {
 
     log.info { "Investigate run done ${workMetrics.noOfInvestigatedEvents.get().toInt()} records examined" }
     File("/tmp/lastfivekeys").writeText(lastFiveKeys.joinToString("\n"))
+    File("/tmp/lastfivekeysandtype").writeText(lastFiveKeysAndType.joinToString("\n"))
 
     /*
     var msg: String = "Not found"

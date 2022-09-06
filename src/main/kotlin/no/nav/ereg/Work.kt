@@ -19,6 +19,8 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer
 
 private val log = KotlinLogging.logger {}
 
+private const val EV_kafka_topic_cache = "KAFKA_TOPIC_CACHE"
+private const val EV_kafka_topic = "KAFKA_TOPIC"
 private const val EV_kafka_topic_tombstones = "KAFKA_TOPIC_TOMBSTONES"
 
 sealed class ExitReason {
@@ -109,6 +111,8 @@ val workMetrics = WMetrics()
 
 // var localLogExample = false
 
+var runOnce = false
+
 internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
     var latestOffset = -1L
@@ -121,8 +125,9 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
         exitReason = ExitReason.NoKafkaClient
         val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray?>(
-            config = ws.kafkaConfig,
-            fromBeginning = false
+            config = ws.kafkaConfigGcp,
+            fromBeginning = runOnce,
+            topics = listOf(AnEnvironment.getEnvOrDefault(EV_kafka_topic_cache, "NOT FOUND Kafka topic"))
         )
 
         kafkaConsumer.consume { consumerRecords ->
@@ -130,6 +135,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             exitReason = ExitReason.NoEvents
             if (consumerRecords.isEmpty) return@consume KafkaConsumerStates.IsFinished
 
+            runOnce = true
             exitReason = ExitReason.Work
             workMetrics.noOfConsumedEvents.inc(consumerRecords.count().toDouble())
 
@@ -146,7 +152,8 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                 return@consume KafkaConsumerStates.HasIssues
             }
 
-            val topic = kafkaConsumer.topics.first()
+            val topic = AnEnvironment.getEnvOrDefault(EV_kafka_topic, "NOT FOUND Kafka topic")
+
             val topicKafkaTombstones = AnEnvironment.getEnvOrDefault(EV_kafka_topic_tombstones, "NOT FOUND Kafka topic tombstones")
 
             val orgObjects = orgObjectBases.filterIsInstance<OrgObject>()
