@@ -32,6 +32,7 @@ interface Investigate {
 
 internal fun investigate(ws: WorkSettings) {
     workMetrics.noOfInvestigatedEvents.clear()
+    var hasReadFromCache = false
     val lastFiveKeys: MutableList<String> = mutableListOf()
     val lastFiveKeysPattern: MutableList<String> = mutableListOf("912477746", "829488442", "929521471", "929628314", "929745086")
 
@@ -48,8 +49,14 @@ internal fun investigate(ws: WorkSettings) {
 
         if (consumerRecords.isEmpty) {
             log.info { "Investigate  - No more consumer records found on topic" }
+            if (!hasReadFromCache) {
+                log.info { "Investigate - cache not ready will attempt again in a minute" }
+                Bootstrap.conditionalWait(60000)
+                return@consume KafkaConsumerStates.IsOk
+            }
             return@consume KafkaConsumerStates.IsFinished
         }
+        hasReadFromCache = true
         log.debug { "Investigate - Consumer records batch of ${consumerRecords.count()} found" }
 
         workMetrics.noOfInvestigatedEvents.inc(consumerRecords.count().toDouble())

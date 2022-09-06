@@ -41,7 +41,7 @@ object Bootstrap {
         }
     }
 
-    private fun conditionalWait(ms: Long = bootstrapWaitTime) =
+    public fun conditionalWait(ms: Long = bootstrapWaitTime) =
         runBlocking {
 
             log.info { "Will wait $ms ms before starting all over" }
