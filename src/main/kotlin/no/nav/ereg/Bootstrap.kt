@@ -19,7 +19,7 @@ object Bootstrap {
     fun start(ws: WorkSettings = WorkSettings()) {
         log.info { "Starting" }
         enableNAISAPI {
-            investigate(ws)
+            // investigate(ws)
             loop(ws)
         }
         log.info { "Finished!" }
@@ -29,7 +29,7 @@ object Bootstrap {
         val stop = ShutdownHook.isActive() || PrestopHook.isActive()
         when {
             stop -> Unit
-            !stop -> conditionalWait() /*loop(work(ws)
+            !stop -> loop(work(ws)
 
                 .let { prevWS ->
                     // re-read of vault entries in case of changes, keeping relevant access tokens and static env. vars.
@@ -37,8 +37,8 @@ object Bootstrap {
                         sfClient = prevWS.first.sfClient.copyRelevant()
                     )
                 }
-                .also { conditionalWait() }*/
-            // )
+                .also { conditionalWait() }
+            )
         }
     }
 

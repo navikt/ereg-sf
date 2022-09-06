@@ -7,12 +7,8 @@ import no.nav.sf.library.AnEnvironment
 import no.nav.sf.library.EV_kafkaClientID
 import no.nav.sf.library.KAFKA_LOCAL
 import no.nav.sf.library.KafkaConsumerStates
-import no.nav.sf.library.KafkaMessage
 import no.nav.sf.library.PROGNAME
-import no.nav.sf.library.SFsObjectRest
 import no.nav.sf.library.SalesforceClient
-import no.nav.sf.library.encodeB64
-import no.nav.sf.library.isSuccess
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -119,6 +115,8 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
     log.info { "bootstrap work session starting client ${ws.sfClient}" }
     workMetrics.clearAll()
 
+    var foundFirstThresholdEvent = false
+
     var exitReason: ExitReason = ExitReason.NoSFClient
 
     ws.sfClient.enablesObjectPost { postActivities ->
@@ -135,18 +133,21 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             exitReason = ExitReason.NoEvents
             if (consumerRecords.isEmpty) return@consume KafkaConsumerStates.IsFinished
 
+            if (!foundFirstThresholdEvent) {
+                log.info { "Found records for threshold check run" }
+            }
             runOnce = true
             exitReason = ExitReason.Work
             workMetrics.noOfConsumedEvents.inc(consumerRecords.count().toDouble())
 
-            val orgObjectBases = consumerRecords.map {
-                OrgObjectBase.fromProto(it.key(), it.value()).also { oob ->
-                    if (oob is OrgObjectProtobufIssue)
+            val orgObjectBasesAndOffsets = consumerRecords.map {
+                Pair(OrgObjectBase.fromProto(it.key(), it.value()), it.offset()).also { oob ->
+                    if (oob.first is OrgObjectProtobufIssue)
                         log.error { "Protobuf parsing issue for offset ${it.offset()} in partition ${it.partition()}" }
                 }
             }
 
-            if (orgObjectBases.filterIsInstance<OrgObjectProtobufIssue>().isNotEmpty()) {
+            if (orgObjectBasesAndOffsets.filter { it.first is OrgObjectProtobufIssue }.isNotEmpty()) {
                 log.error { "Protobuf issues - leaving kafka consumer loop" }
                 workMetrics.consumerIssues.inc()
                 return@consume KafkaConsumerStates.HasIssues
@@ -156,11 +157,19 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
             val topicKafkaTombstones = AnEnvironment.getEnvOrDefault(EV_kafka_topic_tombstones, "NOT FOUND Kafka topic tombstones")
 
-            val orgObjects = orgObjectBases.filterIsInstance<OrgObject>()
-                .filter { it.key.orgNumber.isNotEmpty() && it.value.orgAsJson.isNotEmpty() }
+            val orgObjects = orgObjectBasesAndOffsets.filter { it.first is OrgObject }
+                .filter { (it.first as OrgObject).key.orgNumber.isNotEmpty() && (it.first as OrgObject).value.orgAsJson.isNotEmpty() }
 
-            val orgTombStones = orgObjectBases.filterIsInstance<OrgObjectTombstone>()
-                    .filter { it.key.orgNumber.isNotEmpty() }
+            val orgTombStones = orgObjectBasesAndOffsets.filter { it.first is OrgObjectTombstone }
+                    .filter { (it.first as OrgObjectTombstone).key.orgNumber.isNotEmpty() }.map { Pair(it.first as OrgObjectTombstone, it.second) }
+
+            // if (!foundFirstThresholdEvent) {
+                orgTombStones.firstOrNull { it.first.key.orgNumber == "929745086" }?.let {
+                    foundFirstThresholdEvent = true
+                    log.info { "Found threshold event at offset ${it.second}" }
+                }
+
+            // }
 
             consumerRecords.lastOrNull()?.let {
                 latestOffset = it.offset()
@@ -168,6 +177,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
             workMetrics.noOfConsumedTombstones.inc(orgTombStones.size.toDouble())
 
+            /*
             val body = SFsObjectRest(
                     records = orgObjects.map {
                         KafkaMessage(
@@ -183,28 +193,6 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                     }
             ).toJson()
 
-            /*
-            if (!localLogExample) {
-                val bodyReadable = SFsObjectRest(
-                    records = orgObjects.map {
-                        KafkaMessage(
-                            topic = topic,
-                            key = "${it.key.orgNumber}#${it.key.orgType}#${it.value.jsonHashCode}",
-                            value = it.value.orgAsJson
-                        )
-                    } + orgTombStones.map {
-                        KafkaMessage(
-                            topic = topicKafkaTombstones,
-                            key = "${it.key.orgNumber}",
-                            value = "${it.key.orgNumber}")
-                    }
-                ).toJson()
-                localLogExample = true
-                Investigate.writeText("Body of a post:\n$bodyReadable")
-            }
-
-             */
-
             when (postActivities(body).isSuccess()) {
                 true -> {
                     workMetrics.noOfPostedEvents.inc(consumerRecords.count().toDouble())
@@ -215,6 +203,9 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                     KafkaConsumerStates.HasIssues
                 }
             }
+
+             */
+            KafkaConsumerStates.IsOk
         }
     }
     log.info { "bootstrap work session finished - $exitReason . No of consumed total events ${workMetrics.noOfConsumedEvents.get().toInt()} of which tombstones: ${workMetrics.noOfConsumedTombstones.get().toInt()}, latest offset $latestOffset" }
