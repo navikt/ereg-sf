@@ -197,6 +197,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             when (postActivities(body).isSuccess()) {
                 true -> {
                     workMetrics.noOfPostedEvents.inc(consumerRecords.count().toDouble())
+                    log.info { "SENT A BATCH" }
                     KafkaConsumerStates.IsOk
                 }
                 false -> {
