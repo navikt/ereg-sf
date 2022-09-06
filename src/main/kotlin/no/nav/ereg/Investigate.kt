@@ -38,7 +38,7 @@ internal fun investigate(ws: WorkSettings) {
     val lastFiveKeysPattern: MutableList<String> = mutableListOf("912477746", "829488442", "929521471", "929628314", "929745086")
 
     val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray>(
-        config = ws.kafkaConfigGcp, // Separate clientId - do not affect offset of normal read
+        config = ws.kafkaConfigAlternative, // Separate clientId - do not affect offset of normal read
         fromBeginning = true // ,
         // topics = listOf(kafkaCacheTopicGcp)
     )
