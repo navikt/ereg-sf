@@ -124,7 +124,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
         exitReason = ExitReason.NoKafkaClient
         val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray?>(
             config = ws.kafkaConfigGcp,
-            fromBeginning = runOnce,
+            fromBeginning = !runOnce,
             topics = listOf(AnEnvironment.getEnvOrDefault(EV_kafka_topic_cache, "NOT FOUND Kafka topic"))
         )
 
