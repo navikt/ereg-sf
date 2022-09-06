@@ -7,8 +7,12 @@ import no.nav.sf.library.AnEnvironment
 import no.nav.sf.library.EV_kafkaClientID
 import no.nav.sf.library.KAFKA_LOCAL
 import no.nav.sf.library.KafkaConsumerStates
+import no.nav.sf.library.KafkaMessage
 import no.nav.sf.library.PROGNAME
+import no.nav.sf.library.SFsObjectRest
 import no.nav.sf.library.SalesforceClient
+import no.nav.sf.library.encodeB64
+import no.nav.sf.library.isSuccess
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -115,8 +119,6 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
     log.info { "bootstrap work session starting client ${ws.sfClient}" }
     workMetrics.clearAll()
 
-    var foundFirstThresholdEvent = false
-
     var exitReason: ExitReason = ExitReason.NoSFClient
 
     ws.sfClient.enablesObjectPost { postActivities ->
@@ -128,15 +130,16 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             topics = listOf(AnEnvironment.getEnvOrDefault(EV_kafka_topic_cache, "NOT FOUND Kafka topic"))
         )
 
-        kafkaConsumer.consume { consumerRecords ->
+        kafkaConsumer.consume { consumerRecordsBeforeFilter ->
 
             exitReason = ExitReason.NoEvents
-            if (consumerRecords.isEmpty) return@consume KafkaConsumerStates.IsFinished
+            if (consumerRecordsBeforeFilter.isEmpty) return@consume KafkaConsumerStates.IsFinished
 
-            if (!foundFirstThresholdEvent) {
-                log.info { "Found records for threshold check run" }
-            }
             runOnce = true
+
+            val consumerRecords = consumerRecordsBeforeFilter.filter { it.offset() > 6286018L }
+
+            if (consumerRecords.isEmpty()) return@consume KafkaConsumerStates.IsOk // Only records under threshold, fetch new batch
             exitReason = ExitReason.Work
             workMetrics.noOfConsumedEvents.inc(consumerRecords.count().toDouble())
 
@@ -158,17 +161,16 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             val topicKafkaTombstones = AnEnvironment.getEnvOrDefault(EV_kafka_topic_tombstones, "NOT FOUND Kafka topic tombstones")
 
             val orgObjects = orgObjectBasesAndOffsets.filter { it.first is OrgObject }
-                .filter { (it.first as OrgObject).key.orgNumber.isNotEmpty() && (it.first as OrgObject).value.orgAsJson.isNotEmpty() }
+                .filter { (it.first as OrgObject).key.orgNumber.isNotEmpty() && (it.first as OrgObject).value.orgAsJson.isNotEmpty() }.map { Pair(it.first as OrgObject, it.second) }
 
             val orgTombStones = orgObjectBasesAndOffsets.filter { it.first is OrgObjectTombstone }
                     .filter { (it.first as OrgObjectTombstone).key.orgNumber.isNotEmpty() }.map { Pair(it.first as OrgObjectTombstone, it.second) }
 
             // if (!foundFirstThresholdEvent) {
-                orgTombStones.firstOrNull { it.first.key.orgNumber == "929745086" }?.let {
-                    foundFirstThresholdEvent = true
-                    log.info { "Found threshold event at offset ${it.second}" }
-                }
-
+            //    orgTombStones.firstOrNull { it.first.key.orgNumber == "929745086" }?.let {
+            //        foundFirstThresholdEvent = true
+            //        log.info { "Found threshold event at offset ${it.second}" }
+            //    }
             // }
 
             consumerRecords.lastOrNull()?.let {
@@ -177,19 +179,18 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
             workMetrics.noOfConsumedTombstones.inc(orgTombStones.size.toDouble())
 
-            /*
             val body = SFsObjectRest(
                     records = orgObjects.map {
                         KafkaMessage(
                                 topic = topic,
-                                key = "${it.key.orgNumber}#${it.key.orgType}#${it.value.jsonHashCode}",
-                                value = it.value.orgAsJson.encodeB64()
+                                key = "${it.first.key.orgNumber}#${it.first.key.orgType}#${it.first.value.jsonHashCode}",
+                                value = it.first.value.orgAsJson.encodeB64()
                         )
                     } + orgTombStones.map {
                         KafkaMessage(
                                 topic = topicKafkaTombstones,
-                                key = "${it.key.orgNumber}",
-                                value = "${it.key.orgNumber}")
+                                key = "${it.first.key.orgNumber}",
+                                value = "${it.first.key.orgNumber}")
                     }
             ).toJson()
 
@@ -204,7 +205,6 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                 }
             }
 
-             */
             KafkaConsumerStates.IsOk
         }
     }
