@@ -111,7 +111,7 @@ val workMetrics = WMetrics()
 
 // var localLogExample = false
 
-var runOnce = false
+var runOnce = true
 
 internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
@@ -197,7 +197,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             when (postActivities(body).isSuccess()) {
                 true -> {
                     workMetrics.noOfPostedEvents.inc(consumerRecords.count().toDouble())
-                    log.info { "SENT A BATCH" }
+                    log.info { "Posted a batch of ${consumerRecords.count()}" }
                     KafkaConsumerStates.IsOk
                 }
                 false -> {
