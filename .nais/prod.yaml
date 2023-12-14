@@ -6,7 +6,6 @@ metadata:
   labels:
     team: team-dialog
 spec:
-  webproxy: true
   image: {{ image }}
   port: 8080
   replicas:

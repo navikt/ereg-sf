@@ -7,7 +7,6 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.nav.ereg.SALESFORCE_VERSION
 import no.nav.ereg.SF_PATH_oAuth
-import no.nav.ereg.env_HTTPS_PROXY
 import no.nav.ereg.env_SF_TOKENHOST
 import no.nav.ereg.kafka.env
 import no.nav.ereg.metrics.ErrorState
@@ -184,7 +183,7 @@ sealed class SFAccessToken {
 }
 
 class SalesforceClient(
-    private val httpClient: Lazy<HttpHandler> = lazy { ApacheClient.supportProxy(env(env_HTTPS_PROXY)) },
+    private val httpClient: Lazy<HttpHandler> = lazy { ApacheClient() },
     private val tokenHost: Lazy<String> = lazy { env(env_SF_TOKENHOST) },
     private val clientID: String = env(secret_SFClientID),
     private val username: String = env(secret_SFUsername),
