@@ -71,3 +71,5 @@ spec:
       value: GCP
     - name: KAFKA_USER # When fetching on-prem srv password from gcp secret
       value: srveregsf
+    - name: KAFKA_POLL_DURATION
+      value: '10000'
