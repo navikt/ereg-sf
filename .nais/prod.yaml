@@ -6,7 +6,8 @@ metadata:
   labels:
     team: team-dialog
 spec:
-  image: "{{ image }}"
+  webproxy: true
+  image: {{ image }}
   port: 8080
   replicas:
     min: 1
@@ -70,5 +71,3 @@ spec:
       value: GCP
     - name: KAFKA_USER # When fetching on-prem srv password from gcp secret
       value: srveregsf
-    - name: KAFKA_POLL_DURATION
-      value: '10000'

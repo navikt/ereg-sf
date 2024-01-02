@@ -2,13 +2,17 @@ package no.nav.ereg
 
 import io.prometheus.client.Gauge
 import mu.KotlinLogging
-import no.nav.ereg.kafka.AKafkaConsumer
-import no.nav.ereg.kafka.KafkaConsumerStates
-import no.nav.ereg.salesforce.KafkaMessage
-import no.nav.ereg.salesforce.SFsObjectRest
-import no.nav.ereg.salesforce.SalesforceClient
-import no.nav.ereg.salesforce.encodeB64
-import no.nav.ereg.salesforce.isSuccess
+import no.nav.sf.library.AKafkaConsumer
+import no.nav.sf.library.AnEnvironment
+import no.nav.sf.library.EV_kafkaClientID
+import no.nav.sf.library.KAFKA_LOCAL
+import no.nav.sf.library.KafkaConsumerStates
+import no.nav.sf.library.KafkaMessage
+import no.nav.sf.library.PROGNAME
+import no.nav.sf.library.SFsObjectRest
+import no.nav.sf.library.SalesforceClient
+import no.nav.sf.library.encodeB64
+import no.nav.sf.library.isSuccess
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -33,21 +37,21 @@ const val EV_kafkaCredstorePassword = "KAFKA_CREDSTORE_PASSWORD"
 const val EV_kafkaTruststorePath = "KAFKA_TRUSTSTORE_PATH"
 
 fun fetchEnv(env: String): String {
-    return getEnvOrDefault(env, "$env missing")
+    return AnEnvironment.getEnvOrDefault(env, "$env missing")
 }
 
 data class WorkSettings(
     val kafkaConfig: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
-        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to getEnvOrDefault("KAFKA_BROKERS_ON_PREM", "KAFKA_LOCAL")
+        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to AnEnvironment.getEnvOrDefault("KAFKA_BROKERS_ON_PREM", KAFKA_LOCAL)
     ),
     val kafkaConfigAlternative: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
-        ConsumerConfig.GROUP_ID_CONFIG to getEnvOrDefault(env_KAFKA_CLIENTID, "LOCAL") + "_init",
-        ConsumerConfig.CLIENT_ID_CONFIG to getEnvOrDefault(env_KAFKA_CLIENTID, "LOCAL") + "_init",
-        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to getEnvOrDefault("KAFKA_BROKERS_ON_PREM", "KAFKA_LOCAL")
+        ConsumerConfig.GROUP_ID_CONFIG to AnEnvironment.getEnvOrDefault(EV_kafkaClientID, PROGNAME) + "_init",
+        ConsumerConfig.CLIENT_ID_CONFIG to AnEnvironment.getEnvOrDefault(EV_kafkaClientID, PROGNAME) + "_init",
+        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to AnEnvironment.getEnvOrDefault("KAFKA_BROKERS_ON_PREM", KAFKA_LOCAL)
     ),
     val kafkaConfigGcp: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to ByteArrayDeserializer::class.java,
@@ -69,10 +73,10 @@ data class WMetrics(
         .help("No. of consumed records from kafka since last work session")
         .register(),
     val noOfConsumedTombstones: Gauge = Gauge
-        .build()
-        .name("kafka_consumed_tombstones_gauge")
-        .help("kafka_consumed_tombstones_gauge")
-        .register(),
+            .build()
+            .name("kafka_consumed_tombstones_gauge")
+            .help("kafka_consumed_tombstones_gauge")
+            .register(),
     val noOfPostedEvents: Gauge = Gauge
         .build()
         .name("sf_posted_event_gauge")
@@ -123,7 +127,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
         val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray?>(
             config = ws.kafkaConfigGcp,
             fromBeginning = !runOnce,
-            topic = getEnvOrDefault(EV_kafka_topic_cache, "NOT FOUND Kafka topic")
+            topics = listOf(AnEnvironment.getEnvOrDefault(EV_kafka_topic_cache, "NOT FOUND Kafka topic"))
         )
 
         kafkaConsumer.consume { consumerRecordsBeforeFilter ->
@@ -152,15 +156,15 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                 return@consume KafkaConsumerStates.HasIssues
             }
 
-            val topic = getEnvOrDefault(EV_kafka_topic, "NOT FOUND Kafka topic")
+            val topic = AnEnvironment.getEnvOrDefault(EV_kafka_topic, "NOT FOUND Kafka topic")
 
-            val topicKafkaTombstones = getEnvOrDefault(EV_kafka_topic_tombstones, "NOT FOUND Kafka topic tombstones")
+            val topicKafkaTombstones = AnEnvironment.getEnvOrDefault(EV_kafka_topic_tombstones, "NOT FOUND Kafka topic tombstones")
 
             val orgObjects = orgObjectBasesAndOffsets.filter { it.first is OrgObject }
                 .filter { (it.first as OrgObject).key.orgNumber.isNotEmpty() && (it.first as OrgObject).value.orgAsJson.isNotEmpty() }.map { Pair(it.first as OrgObject, it.second) }
 
             val orgTombStones = orgObjectBasesAndOffsets.filter { it.first is OrgObjectTombstone }
-                .filter { (it.first as OrgObjectTombstone).key.orgNumber.isNotEmpty() }.map { Pair(it.first as OrgObjectTombstone, it.second) }
+                    .filter { (it.first as OrgObjectTombstone).key.orgNumber.isNotEmpty() }.map { Pair(it.first as OrgObjectTombstone, it.second) }
 
             // if (!foundFirstThresholdEvent) {
             //    orgTombStones.firstOrNull { it.first.key.orgNumber == "929745086" }?.let {
@@ -176,19 +180,18 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             workMetrics.noOfConsumedTombstones.inc(orgTombStones.size.toDouble())
 
             val body = SFsObjectRest(
-                records = orgObjects.map {
-                    KafkaMessage(
-                        CRM_Topic__c = topic,
-                        CRM_Key__c = "${it.first.key.orgNumber}#${it.first.key.orgType}#${it.first.value.jsonHashCode}",
-                        CRM_Value__c = it.first.value.orgAsJson.encodeB64()
-                    )
-                } + orgTombStones.map {
-                    KafkaMessage(
-                        CRM_Topic__c = topicKafkaTombstones,
-                        CRM_Key__c = "${it.first.key.orgNumber}",
-                        CRM_Value__c = "${it.first.key.orgNumber}"
-                    )
-                }
+                    records = orgObjects.map {
+                        KafkaMessage(
+                                topic = topic,
+                                key = "${it.first.key.orgNumber}#${it.first.key.orgType}#${it.first.value.jsonHashCode}",
+                                value = it.first.value.orgAsJson.encodeB64()
+                        )
+                    } + orgTombStones.map {
+                        KafkaMessage(
+                                topic = topicKafkaTombstones,
+                                key = "${it.first.key.orgNumber}",
+                                value = "${it.first.key.orgNumber}")
+                    }
             ).toJson()
 
             when (postActivities(body).isSuccess()) {
