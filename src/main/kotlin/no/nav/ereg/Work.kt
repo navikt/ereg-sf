@@ -129,7 +129,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             exitReason = ExitReason.NoEvents
             if (consumerRecordsBeforeFilter.isEmpty) return@consume KafkaConsumerStates.IsFinished
 
-            //runOnce = true
+            // runOnce = true
 
             val consumerRecords = consumerRecordsBeforeFilter.filter { it.offset() > 6286018L }
 
