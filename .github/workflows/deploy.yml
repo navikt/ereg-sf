@@ -14,7 +14,7 @@ jobs:
           distribution: zulu
       - name: Build and run tests
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GPR_READ_EREG_SF }}
         run: ./gradlew test
   build:
     name: Build and push Docker container

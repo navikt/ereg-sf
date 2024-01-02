@@ -4,11 +4,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import no.nav.ereg.nais.PrestopHook
-import no.nav.ereg.nais.enableNAISAPI
+import no.nav.sf.library.AnEnvironment
+import no.nav.sf.library.PrestopHook
+import no.nav.sf.library.ShutdownHook
+import no.nav.sf.library.enableNAISAPI
 
 private const val EV_bootstrapWaitTime = "MS_BETWEEN_WORK" // default to 10 minutes
-private val bootstrapWaitTime = getEnvOrDefault(EV_bootstrapWaitTime, "60000").toLong()
+private val bootstrapWaitTime = AnEnvironment.getEnvOrDefault(EV_bootstrapWaitTime, "60000").toLong()
 
 object Bootstrap {
 
@@ -24,19 +26,18 @@ object Bootstrap {
     }
 
     private tailrec fun loop(ws: WorkSettings) {
-        val stop = PrestopHook.isActive()
+        val stop = ShutdownHook.isActive() || PrestopHook.isActive()
         when {
             stop -> Unit
-            !stop -> loop(
-                work(ws)
+            !stop -> loop(work(ws)
 
-                    .let { prevWS ->
-                        // re-read of vault entries in case of changes, keeping relevant access tokens and static env. vars.
-                        prevWS.first.copy(
-                            sfClient = prevWS.first.sfClient
-                        )
-                    }
-                    .also { conditionalWait() }
+                .let { prevWS ->
+                    // re-read of vault entries in case of changes, keeping relevant access tokens and static env. vars.
+                    prevWS.first.copy(
+                        sfClient = prevWS.first.sfClient.copyRelevant()
+                    )
+                }
+                .also { conditionalWait() }
             )
         }
     }
@@ -54,7 +55,7 @@ object Bootstrap {
 
             tailrec suspend fun loop(): Unit = when {
                 cr.isCompleted -> Unit
-                PrestopHook.isActive() -> cr.cancel()
+                ShutdownHook.isActive() || PrestopHook.isActive() -> cr.cancel()
                 else -> {
                     delay(250L)
                     loop()
