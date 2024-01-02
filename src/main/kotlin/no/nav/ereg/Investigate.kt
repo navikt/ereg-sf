@@ -1,18 +1,20 @@
 package no.nav.ereg
 
-import mu.KotlinLogging
-import no.nav.ereg.kafka.AKafkaConsumer
-import no.nav.ereg.kafka.KafkaConsumerStates
 import java.io.File
 import java.io.FileOutputStream
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import mu.KotlinLogging
+import no.nav.sf.library.AKafkaConsumer
+import no.nav.sf.library.AnEnvironment
+import no.nav.sf.library.KafkaConsumerStates
+import no.nav.sf.library.PROGNAME
 
 private val log = KotlinLogging.logger {}
 
 const val EV_kafkaConsumerTopic = "KAFKA_TOPIC"
-val kafkaEregTopic = getEnvOrDefault(EV_kafkaConsumerTopic, "No topic set")
+val kafkaEregTopic = AnEnvironment.getEnvOrDefault(EV_kafkaConsumerTopic, "$PROGNAME-consumer")
 
 interface Investigate {
     companion object {

@@ -6,13 +6,13 @@ import no.nav.ereg.proto.EregOrganisationEventValue
 internal sealed class OrgObjectBase {
     companion object {
         fun fromProto(key: ByteArray, value: ByteArray?): OrgObjectBase =
-            runCatching {
-                if (value == null) {
-                    OrgObjectTombstone(EregOrganisationEventKey.parseFrom(key))
-                } else {
-                    OrgObject(EregOrganisationEventKey.parseFrom(key), EregOrganisationEventValue.parseFrom(value))
-                }
-            }.getOrDefault(OrgObjectProtobufIssue)
+                runCatching {
+                    if (value == null) {
+                        OrgObjectTombstone(EregOrganisationEventKey.parseFrom(key))
+                    } else {
+                        OrgObject(EregOrganisationEventKey.parseFrom(key), EregOrganisationEventValue.parseFrom(value))
+                    }
+                }.getOrDefault(OrgObjectProtobufIssue)
     }
 }
 
