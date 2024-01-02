@@ -8,7 +8,7 @@ buildscript {
     ext.grpc_version = '1.26.0'
     ext.javax_annotation_version = '1.3.2'
     ext.kotlin_loggin_version = '1.7.8'
-    ext.logback_version = '1.2.3'
+    ext.logback_version = '1.2.13'
     ext.log4j_version = '1.7.25'
     ext.logstash_encoder_version = '6.3'
     ext.prometheus_version = '0.8.0'
