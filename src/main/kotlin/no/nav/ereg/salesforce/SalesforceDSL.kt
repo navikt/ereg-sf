@@ -319,7 +319,7 @@ class SalesforceClient(
                         log.info { "Salesforce - end of sObject post availability with success" }
                     }
                     .onFailure {
-                        log.error { "Salesforce - end of sObject post availability failed - ${it.message }" }
+                        log.error { "Salesforce - end of sObject post availability failed - ${it.stackTraceToString() }" }
                     }
                 true
             }

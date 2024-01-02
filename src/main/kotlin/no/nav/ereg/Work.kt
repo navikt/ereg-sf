@@ -107,8 +107,6 @@ val workMetrics = WMetrics()
 
 // var localLogExample = false
 
-var runOnce = true
-
 internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
     var latestOffset = -1L
@@ -122,7 +120,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
         exitReason = ExitReason.NoKafkaClient
         val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray?>(
             config = ws.kafkaConfigGcp,
-            fromBeginning = !runOnce,
+            fromBeginning = false,
             topic = getEnvOrDefault(EV_kafka_topic_cache, "NOT FOUND Kafka topic")
         )
 
@@ -131,7 +129,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             exitReason = ExitReason.NoEvents
             if (consumerRecordsBeforeFilter.isEmpty) return@consume KafkaConsumerStates.IsFinished
 
-            runOnce = true
+            //runOnce = true
 
             val consumerRecords = consumerRecordsBeforeFilter.filter { it.offset() > 6286018L }
 
