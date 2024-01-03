@@ -2,12 +2,11 @@ apiVersion: "nais.io/v1alpha1"
 kind: "Application"
 metadata:
   name: ereg-sf
-  namespace: teamcrm
+  namespace: team-dialog
   labels:
-    team: teamcrm
+    team: team-dialog
 spec:
-  webproxy: true
-  image: {{ image }}
+  image: "{{ image }}"
   port: 8080
   replicas:
     min: 1
