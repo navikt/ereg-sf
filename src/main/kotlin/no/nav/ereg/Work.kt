@@ -12,6 +12,7 @@ import no.nav.ereg.salesforce.isSuccess
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
+import java.io.File
 
 private val log = KotlinLogging.logger {}
 
@@ -35,6 +36,8 @@ const val EV_kafkaTruststorePath = "KAFKA_TRUSTSTORE_PATH"
 fun fetchEnv(env: String): String {
     return getEnvOrDefault(env, "$env missing")
 }
+
+var samples = 5
 
 data class WorkSettings(
     val kafkaConfig: Map<String, Any> = AKafkaConsumer.configBase + mapOf<String, Any>(
@@ -175,6 +178,10 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
             val body = SFsObjectRest(
                 records = orgObjects.map {
+                    if (samples > 0) {
+                        File("/tmp/samples").appendText("KEY: ${it.first.key.orgNumber}#${it.first.key.orgType}#${it.first.value.jsonHashCode}\nVALUE:${it.first.value.orgAsJson}\n\n")
+                        samples--
+                    }
                     KafkaMessage(
                         CRM_Topic__c = topic,
                         CRM_Key__c = "${it.first.key.orgNumber}#${it.first.key.orgType}#${it.first.value.jsonHashCode}",
