@@ -24,11 +24,16 @@ spec:
   prometheus:
     enabled: true
     path: /metrics
+  observability:
+    logging:
+      destinations:
+        - id: elastic
+        - id: loki
   resources:
     limits:
       memory: 4Gi
     requests:
-      cpu: 50m
+      cpu: 5m
       memory: 512Mi
   accessPolicy:
     outbound:
