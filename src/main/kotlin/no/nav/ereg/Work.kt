@@ -134,7 +134,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
 
             // runOnce = true
 
-            val consumerRecords = consumerRecordsBeforeFilter.filter { it.offset() > 6286018L }
+            val consumerRecords = consumerRecordsBeforeFilter // .filter { it.offset() > 6286018L }
 
             if (consumerRecords.isEmpty()) return@consume KafkaConsumerStates.IsOk // Only records under threshold, fetch new batch
             exitReason = ExitReason.Work
