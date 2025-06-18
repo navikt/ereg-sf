@@ -185,7 +185,7 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
                     KafkaMessage(
                         CRM_Topic__c = topic,
                         CRM_Key__c = "${it.first.key.orgNumber}#${it.first.key.orgType}#${it.first.value.jsonHashCode}",
-                        CRM_Value__c = it.first.value.orgAsJson.encodeB64()
+                        CRM_Value__c = (it.first.value.orgAsJson as String).encodeB64()
                     )
                 } + orgTombStones.map {
                     KafkaMessage(

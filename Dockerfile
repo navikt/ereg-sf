@@ -1,3 +1,3 @@
-FROM ghcr.io/navikt/baseimages/temurin:17
-ENV JAVA_OPTS="-Dlogback.configurationFile=logback-remote.xml -Xms512M -Xmx2048M"
+FROM gcr.io/distroless/java21
 COPY build/libs/app*.jar app.jar
+ENTRYPOINT ["java", "-Dlogback.configurationFile=logback-remote.xml", "-jar", "/app.jar"]

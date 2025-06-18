@@ -19,17 +19,15 @@ import no.nav.ereg.secret_PrivateKeyPassword
 import no.nav.ereg.secret_SFClientID
 import no.nav.ereg.secret_SFUsername
 import no.nav.ereg.secret_keystoreJKSB64
-import org.apache.http.HttpHost
-import org.apache.http.client.config.CookieSpecs
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.impl.client.HttpClients
-import org.http4k.client.ApacheClient
+import org.http4k.client.OkHttp
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import java.io.File
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.net.URI
 import java.security.KeyStore
 import java.security.PrivateKey
@@ -38,23 +36,16 @@ private val log = KotlinLogging.logger { }
 
 val gson = Gson()
 
-fun ApacheClient.supportProxy(httpsProxy: String): HttpHandler = httpsProxy.let { p ->
+fun OkHttp.supportProxy(httpsProxy: String): HttpHandler = httpsProxy.let { p ->
     when {
         p.isEmpty() -> this()
         else -> {
-            val up = URI(p)
-            this(
-                client =
-                    HttpClients.custom()
-                        .setDefaultRequestConfig(
-                            RequestConfig.custom()
-                                .setProxy(HttpHost(up.host, up.port, up.scheme))
-                                .setRedirectsEnabled(false)
-                                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
-                                .build()
-                        )
-                        .build()
+            val uri = URI(p)
+            val proxy = Proxy(
+                Proxy.Type.HTTP,
+                InetSocketAddress(uri.host, uri.port)
             )
+            this(client = okhttp3.OkHttpClient.Builder().proxy(proxy).build())
         }
     }
 }
@@ -67,10 +58,10 @@ fun HttpHandler.measure(r: Request, m: Histogram): Response =
         }
     }
 
-fun ByteArray.encodeB64(): String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(this)
-fun String.encodeB64UrlSafe(): String = org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(this.toByteArray())
-fun String.encodeB64(): String = org.apache.commons.codec.binary.Base64.encodeBase64String(this.toByteArray())
-fun String.decodeB64(): ByteArray = org.apache.commons.codec.binary.Base64.decodeBase64(this)
+fun ByteArray.encodeB64(): String = String(java.util.Base64.getUrlEncoder().withoutPadding().encode(this))
+fun String.decodeB64(): ByteArray = java.util.Base64.getMimeDecoder().decode(this)
+fun String.encodeB64UrlSafe(): String = this.toByteArray(Charsets.UTF_8).encodeB64()
+fun String.encodeB64(): String = this.toByteArray(Charsets.UTF_8).encodeB64()
 
 /**
  * Getting access token from Salesforce is a little bit involving due to
@@ -183,7 +174,7 @@ sealed class SFAccessToken {
 }
 
 class SalesforceClient(
-    private val httpClient: Lazy<HttpHandler> = lazy { ApacheClient() },
+    private val httpClient: Lazy<HttpHandler> = lazy { OkHttp() },
     private val tokenHost: Lazy<String> = lazy { env(env_SF_TOKENHOST) },
     private val clientID: String = env(secret_SFClientID),
     private val username: String = env(secret_SFUsername),
