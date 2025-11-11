@@ -5,7 +5,10 @@ import no.nav.ereg.proto.EregOrganisationEventValue
 
 internal sealed class OrgObjectBase {
     companion object {
-        fun fromProto(key: ByteArray, value: ByteArray?): OrgObjectBase =
+        fun fromProto(
+            key: ByteArray,
+            value: ByteArray?,
+        ): OrgObjectBase =
             runCatching {
                 if (value == null) {
                     OrgObjectTombstone(EregOrganisationEventKey.parseFrom(key))
@@ -18,9 +21,11 @@ internal sealed class OrgObjectBase {
 
 internal object OrgObjectProtobufIssue : OrgObjectBase()
 
-internal data class OrgObjectTombstone(val key: EregOrganisationEventKey) : OrgObjectBase()
+internal data class OrgObjectTombstone(
+    val key: EregOrganisationEventKey,
+) : OrgObjectBase()
 
 internal data class OrgObject(
     val key: EregOrganisationEventKey,
-    val value: EregOrganisationEventValue
+    val value: EregOrganisationEventValue,
 ) : OrgObjectBase()

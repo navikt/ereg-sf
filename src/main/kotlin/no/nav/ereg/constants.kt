@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename", "ktlint:standard:property-naming")
+
 package no.nav.ereg
 
 const val env_DEPLOY_APP = "DEPLOY_APP"
@@ -43,4 +45,7 @@ const val numberOfSamplesInSampleRun = 3
 const val hourToStartWorkSessionOnActiveDate = 8
 const val SALESFORCE_VERSION = "v56.0"
 
-fun getEnvOrDefault(env: String, defaultValue: String): String = System.getenv(env) ?: defaultValue
+fun getEnvOrDefault(
+    env: String,
+    defaultValue: String,
+): String = System.getenv(env) ?: defaultValue

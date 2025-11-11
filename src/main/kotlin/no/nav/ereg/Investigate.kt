@@ -11,16 +11,20 @@ import java.time.format.DateTimeFormatter
 
 private val log = KotlinLogging.logger {}
 
-const val EV_kafkaConsumerTopic = "KAFKA_TOPIC"
-val kafkaEregTopic = getEnvOrDefault(EV_kafkaConsumerTopic, "No topic set")
+const val EV_KAFKA_CONSUMER_TOPIC = "KAFKA_TOPIC"
+val kafkaEregTopic = getEnvOrDefault(EV_KAFKA_CONSUMER_TOPIC, "No topic set")
 
 interface Investigate {
     companion object {
-        fun writeText(text: String, append: Boolean = false) {
-            val timeStamp = DateTimeFormatter
-                .ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")
-                .withZone(ZoneOffset.systemDefault())
-                .format(Instant.now())
+        fun writeText(
+            text: String,
+            append: Boolean = false,
+        ) {
+            val timeStamp =
+                DateTimeFormatter
+                    .ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS")
+                    .withZone(ZoneOffset.systemDefault())
+                    .format(Instant.now())
             FileOutputStream("/tmp/investigate", append).bufferedWriter().use { writer ->
                 writer.write("$timeStamp : $text \n")
             }
@@ -35,11 +39,12 @@ internal fun investigate(ws: WorkSettings) {
     val lastFiveKeysAndType: MutableList<String> = mutableListOf()
     val lastFiveKeysPattern: MutableList<String> = mutableListOf("912477746", "829488442", "929521471", "929628314", "929745086")
 
-    val kafkaConsumer = AKafkaConsumer<ByteArray, ByteArray>(
-        config = ws.kafkaConfigAlternative, // Separate clientId - do not affect offset of normal read
-        fromBeginning = true // ,
-        // topics = listOf(kafkaCacheTopicGcp)
-    )
+    val kafkaConsumer =
+        AKafkaConsumer<ByteArray, ByteArray>(
+            config = ws.kafkaConfigAlternative, // Separate clientId - do not affect offset of normal read
+            fromBeginning = true, // ,
+            // topics = listOf(kafkaCacheTopicGcp)
+        )
 
     val recordInCache: MutableList<String> = mutableListOf()
     workMetrics.noOfInvestigatedEvents.clear()
@@ -60,12 +65,14 @@ internal fun investigate(ws: WorkSettings) {
 
         workMetrics.noOfInvestigatedEvents.inc(consumerRecords.count().toDouble())
 
-        val orgObjectBases = consumerRecords.map {
-            OrgObjectBase.fromProto(it.key(), it.value()).also { oob ->
-                if (oob is OrgObjectProtobufIssue)
-                    log.error { "Investigate - Protobuf parsing issue for offset ${it.offset()} in partition ${it.partition()}" }
+        val orgObjectBases =
+            consumerRecords.map {
+                OrgObjectBase.fromProto(it.key(), it.value()).also { oob ->
+                    if (oob is OrgObjectProtobufIssue) {
+                        log.error { "Investigate - Protobuf parsing issue for offset ${it.offset()} in partition ${it.partition()}" }
+                    }
+                }
             }
-        }
         orgObjectBases.forEach {
             if (it is OrgObject) {
                 lastFiveKeys.add(it.key.orgNumber)
@@ -87,7 +94,10 @@ internal fun investigate(ws: WorkSettings) {
                 lastFiveKeysAndType.removeAt(0)
             }
 
-            if (lastFiveKeys.size == 5 && lastFiveKeys[0] == lastFiveKeysPattern[0] && lastFiveKeys[1] == lastFiveKeysPattern[1] && lastFiveKeys[2] == lastFiveKeysPattern[2] && lastFiveKeys[3] == lastFiveKeysPattern[3]) {
+            if (lastFiveKeys.size == 5 && lastFiveKeys[0] == lastFiveKeysPattern[0] && lastFiveKeys[1] == lastFiveKeysPattern[1] &&
+                lastFiveKeys[2] == lastFiveKeysPattern[2] &&
+                lastFiveKeys[3] == lastFiveKeysPattern[3]
+            ) {
                 log.info { "Found key pattern" }
                 File("/tmp/found").appendText("Found key pattern\n")
             }
