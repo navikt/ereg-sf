@@ -40,6 +40,8 @@ spec:
       external:
         - host: login.salesforce.com
         - host: navdialog.my.salesforce.com
+  ingresses:
+    - "https://ereg-sf.intern.nav.no"
   envFrom:
     - configmap: salesforce-common
     - secret: ereg-sf

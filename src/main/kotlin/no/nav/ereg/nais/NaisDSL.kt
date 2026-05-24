@@ -4,15 +4,19 @@ import io.prometheus.client.Gauge
 import io.prometheus.client.exporter.common.TextFormat
 import mu.KotlinLogging
 import no.nav.ereg.metrics.Metrics.cRegistry
+import no.nav.ereg.salesforce.NewAccessTokenHandler
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.Status.Companion.OK
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Netty
 import org.http4k.server.asServer
 import java.io.StringWriter
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 private val log = KotlinLogging.logger { }
 
@@ -41,6 +45,7 @@ fun naisAPI(): HttpHandler =
             log.info { "Received PreStopHook from NAIS" }
             Response(Status.OK)
         },
+        "/internal/testAccess/new" bind Method.GET to testAccessHandlerNew,
     )
 
 fun enableNAISAPI(
@@ -123,4 +128,11 @@ object PrestopHook {
     fun reset() {
         prestopHook = false
     }
+}
+
+val currentTimeStamp: String get() = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
+
+private val testAccessHandlerNew: HttpHandler = {
+    val newAccessTokenHandler = NewAccessTokenHandler()
+    Response(OK).body("$currentTimeStamp\nTest access (new) successful: " + newAccessTokenHandler.testAccess())
 }
