@@ -7,6 +7,7 @@ import no.nav.ereg.kafka.KafkaConsumerStates
 import no.nav.ereg.salesforce.KafkaMessage
 import no.nav.ereg.salesforce.SFsObjectRest
 import no.nav.ereg.salesforce.SalesforceClient
+import no.nav.ereg.salesforce.SalesforceClientLegacy
 import no.nav.ereg.salesforce.encodeB64
 import no.nav.ereg.salesforce.isSuccess
 import org.apache.kafka.clients.consumer.ConsumerConfig

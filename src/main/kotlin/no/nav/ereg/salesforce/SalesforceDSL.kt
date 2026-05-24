@@ -208,7 +208,7 @@ sealed class SFAccessToken {
     }
 }
 
-class SalesforceClient(
+class SalesforceClientLegacy(
     private val httpClient: Lazy<HttpHandler> = lazy { OkHttp() },
     private val tokenHost: Lazy<String> = lazy { env(env_SF_TOKENHOST) },
     private val clientID: String = env(secret_SFClientID),
