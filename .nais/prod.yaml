@@ -41,6 +41,7 @@ spec:
         - host: login.salesforce.com
         - host: navdialog.my.salesforce.com
   envFrom:
+    - configmap: salesforce-common
     - secret: ereg-sf
   filesFrom:
     - secret: ereg-sf
