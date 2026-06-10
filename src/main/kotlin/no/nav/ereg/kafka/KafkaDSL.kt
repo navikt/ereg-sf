@@ -65,6 +65,7 @@ open class AKafkaConsumer<K, V>(
     val topic: String = env(env_KAFKA_TOPIC),
     val pollDuration: Long = envAsLong(env_KAFKA_POLL_DURATION),
     val fromBeginning: Boolean = false,
+    val hasRunOnce: Boolean = false,
     val hasCompletedAWorkSession: Boolean = false,
 ) {
     companion object {
@@ -101,6 +102,7 @@ open class AKafkaConsumer<K, V>(
         topic: String,
         pollDuration: Long = envAsLong(env_KAFKA_POLL_DURATION),
         fromBeginning: Boolean = false,
+        hasRunOnce: Boolean = false,
         hasCompletedAWorkSession: Boolean = false,
         doConsume: (ConsumerRecords<K, V>) -> KafkaConsumerStates,
     ): Boolean =
@@ -108,7 +110,7 @@ open class AKafkaConsumer<K, V>(
             kErrorState = ErrorState.NONE
             KafkaConsumer<K, V>(Properties().apply { config.forEach { set(it.key, it.value) } })
                 .apply {
-                    if (fromBeginning) {
+                    if (fromBeginning || !hasRunOnce) {
                         this
                             .runCatching {
                                 assign(partitionsFor(topic).map { TopicPartition(it.topic(), it.partition()) })
@@ -126,10 +128,19 @@ open class AKafkaConsumer<K, V>(
                             }
                     }
                 }.use { c ->
-                    if (fromBeginning) {
+                    if (fromBeginning || !hasRunOnce) {
                         c
                             .runCatching {
-                                c.seekToBeginning(emptyList())
+                                if (!hasRunOnce) {
+                                    val topicPartitions = partitionsFor(topic).map { TopicPartition(it.topic(), it.partition()) }
+                                    topicPartitions.forEach {
+                                        // Assume one really
+                                        seek(it, 10040719)
+                                    }
+                                    log.info { "PERFORMED SEEK TO OFFSET 10040719" }
+                                }
+                                // Normal:
+                                // c.seekToBeginning(emptyList())
                             }.onFailure {
                                 log.error { "Failure during SeekToBeginning - ${it.message}" }
                             }
@@ -298,7 +309,7 @@ open class AKafkaConsumer<K, V>(
             }
 
     fun consume(handlePolledBatchOfRecords: (ConsumerRecords<K, V>) -> KafkaConsumerStates): Boolean =
-        consume(config, topic, pollDuration, fromBeginning, hasCompletedAWorkSession, handlePolledBatchOfRecords)
+        consume(config, topic, pollDuration, fromBeginning, hasRunOnce, hasCompletedAWorkSession, handlePolledBatchOfRecords)
 }
 
 sealed class Key<out K> {

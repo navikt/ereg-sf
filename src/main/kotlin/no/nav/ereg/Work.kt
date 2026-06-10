@@ -124,6 +124,8 @@ val workMetrics = WMetrics()
 
 // var localLogExample = false
 
+var hasRunOnce = false
+
 internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
     var latestOffset = -1L
     log.info { "bootstrap work session starting client ${ws.sfClient}" }
@@ -138,8 +140,11 @@ internal fun work(ws: WorkSettings): Pair<WorkSettings, ExitReason> {
             AKafkaConsumer<ByteArray, ByteArray?>(
                 config = ws.kafkaConfigGcp,
                 fromBeginning = false,
+                hasRunOnce = hasRunOnce,
                 topic = getEnvOrDefault(EV_KAFKA_TOPIC_CACHE, "NOT FOUND Kafka topic"),
             )
+
+        hasRunOnce = true
 
         kafkaConsumer.consume { consumerRecordsBeforeFilter ->
 
