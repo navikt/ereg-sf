@@ -2,6 +2,7 @@ package no.nav.ereg.salesforce
 
 import mu.KotlinLogging
 import no.nav.ereg.config_SALESFORCE_API_VERSION
+import no.nav.ereg.kafka.env
 import org.http4k.client.OkHttp
 import org.http4k.core.Headers
 import org.http4k.core.HttpHandler
@@ -22,7 +23,7 @@ class SalesforceClient(
 ) {
     private fun post(body: String): Response {
         val dstUrl =
-            "${accessTokenHandler.instanceUrl}/services/data/${config_SALESFORCE_API_VERSION}/composite/sobjects"
+            "${accessTokenHandler.instanceUrl}/services/data/${env(config_SALESFORCE_API_VERSION)}/composite/sobjects"
 
         val headers: Headers =
             listOf(
