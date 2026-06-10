@@ -65,7 +65,7 @@ fun HttpHandler.measure(
     m.startTimer().let { rt ->
         this(r).also {
             rt.observeDuration() // Histogram will store response time
-            File("/tmp/lastTokenCall").writeText("uri: ${r.uri}, method: ${r.method}, body: ${r.body}, headers ${r.headers}")
+            File("/tmp/files/lastTokenCall").writeText("uri: ${r.uri}, method: ${r.method}, body: ${r.body}, headers ${r.headers}")
         }
     }
 

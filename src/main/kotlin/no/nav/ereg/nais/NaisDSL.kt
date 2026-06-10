@@ -1,5 +1,6 @@
 package no.nav.ereg.nais
 
+import filesHandler
 import io.prometheus.client.Gauge
 import io.prometheus.client.exporter.common.TextFormat
 import mu.KotlinLogging
@@ -14,6 +15,7 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.server.Netty
 import org.http4k.server.asServer
+import java.io.File
 import java.io.StringWriter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -46,6 +48,8 @@ fun naisAPI(): HttpHandler =
             Response(Status.OK)
         },
         "/internal/testAccess/new" bind Method.GET to testAccessHandlerNew,
+        "/internal/files" bind Method.GET to filesHandler(File("/tmp/files")),
+        "/internal/files/{path:.*}" bind Method.GET to filesHandler(File("/tmp/files")),
     )
 
 fun enableNAISAPI(

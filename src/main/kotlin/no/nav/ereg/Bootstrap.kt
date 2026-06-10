@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import no.nav.ereg.nais.PrestopHook
 import no.nav.ereg.nais.enableNAISAPI
+import java.io.File
 
 private const val EV_BOOTSTRAP_WAIT_TIME = "MS_BETWEEN_WORK" // default to 10 minutes
 private val bootstrapWaitTime = getEnvOrDefault(EV_BOOTSTRAP_WAIT_TIME, "60000").toLong()
@@ -15,6 +16,8 @@ object Bootstrap {
 
     fun start(ws: WorkSettings = WorkSettings()) {
         log.info { "Starting" }
+        val dir = File("/tmp/files")
+        dir.mkdirs() // ensures /tmp/files exists
         enableNAISAPI {
             // investigate(ws)
             loop(ws)
