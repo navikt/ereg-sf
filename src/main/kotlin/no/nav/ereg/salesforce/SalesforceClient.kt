@@ -22,7 +22,7 @@ class SalesforceClient(
 ) {
     private fun post(body: String): Response {
         val dstUrl =
-            "${accessTokenHandler.instanceUrl}/services/data/$config_SALESFORCE_API_VERSION/composite/sobjects"
+            "${accessTokenHandler.instanceUrl}/services/data/${config_SALESFORCE_API_VERSION}/composite/sobjects"
 
         val headers: Headers =
             listOf(
