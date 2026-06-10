@@ -110,7 +110,7 @@ open class AKafkaConsumer<K, V>(
             kErrorState = ErrorState.NONE
             KafkaConsumer<K, V>(Properties().apply { config.forEach { set(it.key, it.value) } })
                 .apply {
-                    if (fromBeginning || !hasRunOnce) {
+                    if (fromBeginning) { // || !hasRunOnce
                         this
                             .runCatching {
                                 assign(partitionsFor(topic).map { TopicPartition(it.topic(), it.partition()) })
@@ -131,16 +131,16 @@ open class AKafkaConsumer<K, V>(
                     if (fromBeginning || !hasRunOnce) {
                         c
                             .runCatching {
-                                if (!hasRunOnce) {
-                                    val topicPartitions = partitionsFor(topic).map { TopicPartition(it.topic(), it.partition()) }
-                                    topicPartitions.forEach {
-                                        // Assume one really
-                                        seek(it, 10040719)
-                                    }
-                                    log.info { "PERFORMED SEEK TO OFFSET 10040719" }
-                                }
+//                                if (!hasRunOnce) { //This plus above comment - uncomment for force offest seek
+//                                    val topicPartitions = partitionsFor(topic).map { TopicPartition(it.topic(), it.partition()) }
+//                                    topicPartitions.forEach {
+//                                        // Assume one really
+//                                        seek(it, 10040719)
+//                                    }
+//                                    log.info { "PERFORMED SEEK TO OFFSET 10040719" }
+//                                }
                                 // Normal:
-                                // c.seekToBeginning(emptyList())
+                                c.seekToBeginning(emptyList())
                             }.onFailure {
                                 log.error { "Failure during SeekToBeginning - ${it.message}" }
                             }
