@@ -50,7 +50,7 @@ jobs:
         id: docker-push
         with:
           team: team-dialog
-  #  deploy-dev:
+  #  deploy-dev: - no dev-environment for this app, so no need to deploy to dev
   #    name: Deploy to NAIS dev
   #    needs: build
   #    runs-on: ubuntu-latest
