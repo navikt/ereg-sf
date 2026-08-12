@@ -107,6 +107,35 @@ fun naisAPI(): HttpHandler =
                 }
             }
         },
+        "/internal/gui/api/org/{orgNumber}" bind Method.GET to { request ->
+
+            val orgNumber =
+                request.path("orgNumber")
+
+            if (orgNumber.isNullOrBlank()) {
+                Response(Status.BAD_REQUEST)
+                    .body("Missing orgNumber")
+            } else {
+                val events =
+                    auditCache
+                        .byOrg(orgNumber)
+                        .map { event ->
+                            mapOf(
+                                "offset" to event.offset,
+                                "orgNumber" to event.orgNumber,
+                                "orgType" to event.orgType.name,
+                                "name" to event.name,
+                                "registrationDate" to event.registrationDate?.toString(),
+                                "isTombstone" to event.isTombstone,
+                                "json" to event.json,
+                            )
+                        }
+
+                Response(Status.OK)
+                    .header("Content-Type", "application/json")
+                    .body(gson.toJson(events))
+            }
+        },
     )
 
 fun enableNAISAPI(
