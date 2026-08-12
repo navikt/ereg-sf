@@ -1,9 +1,11 @@
 package no.nav.ereg.nais
 
+import com.google.gson.Gson
 import filesHandler
 import io.prometheus.client.Gauge
 import io.prometheus.client.exporter.common.TextFormat
 import mu.KotlinLogging
+import no.nav.ereg.auditCache
 import no.nav.ereg.metrics.Metrics.cRegistry
 import no.nav.ereg.salesforce.NewAccessTokenHandler
 import org.http4k.core.HttpHandler
@@ -11,8 +13,10 @@ import org.http4k.core.Method
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.Status.Companion.OK
+import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
 import org.http4k.routing.routes
+import org.http4k.routing.static
 import org.http4k.server.Netty
 import org.http4k.server.asServer
 import java.io.File
@@ -24,6 +28,8 @@ private val log = KotlinLogging.logger { }
 
 const val NAIS_URL = "http://localhost:"
 const val NAIS_DEFAULT_PORT = 8080
+
+private val gson = Gson()
 
 fun naisAPI(): HttpHandler =
     routes(
@@ -50,6 +56,15 @@ fun naisAPI(): HttpHandler =
         "/internal/testAccess/new" bind Method.GET to testAccessHandlerNew,
         "/internal/files" bind Method.GET to filesHandler(File("/tmp/files")),
         "/internal/files/{path:.*}" bind Method.GET to filesHandler(File("/tmp/files")),
+        "/internal/gui" bind Method.GET to static(ResourceLoader.Classpath("gui")),
+        "/internal/gui/api/events" bind Method.GET to {
+            val events = auditCache.all().takeLast(5000)
+            Response(Status.OK)
+                .header("Content-Type", "application/json")
+                .body(
+                    gson.toJson(events),
+                )
+        },
     )
 
 fun enableNAISAPI(

@@ -11,10 +11,10 @@ import java.io.File
 private const val EV_BOOTSTRAP_WAIT_TIME = "MS_BETWEEN_WORK" // default to 10 minutes
 private val bootstrapWaitTime = getEnvOrDefault(EV_BOOTSTRAP_WAIT_TIME, "60000").toLong()
 
+val auditCache = KafkaEventAuditCache()
+
 object Bootstrap {
     private val log = KotlinLogging.logger { }
-
-    val kafkaEventAuditCache = KafkaEventAuditCache()
 
     fun start(ws: WorkSettings = WorkSettings()) {
         log.info { "Starting" }
@@ -33,7 +33,7 @@ object Bootstrap {
             stop -> Unit
             !stop ->
                 loop(
-                    auditWork(ws, kafkaEventAuditCache) // work(ws)
+                    auditWork(ws, auditCache) // work(ws)
                         .let { prevWS ->
                             // re-read of vault entries in case of changes, keeping relevant access tokens and static env. vars.
                             prevWS.first.copy(
