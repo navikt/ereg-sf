@@ -17,7 +17,7 @@ import java.io.File
 
 private val log = KotlinLogging.logger {}
 
-private const val EV_KAFKA_TOPIC_CACHE = "KAFKA_TOPIC_CACHE"
+const val EV_KAFKA_TOPIC_CACHE = "KAFKA_TOPIC_CACHE"
 private const val EV_KAFKA_TOPIC = "KAFKA_TOPIC"
 private const val EV_KAFKA_TOPIC_TOMBSTONES = "KAFKA_TOPIC_TOMBSTONES"
 
@@ -68,6 +68,14 @@ data class WorkSettings(
                 SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG to fetchEnv(EV_KAFKA_CREDSTORE_PASSWORD),
                 SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG to fetchEnv(EV_KAFKA_TRUSTSTORE_PATH),
                 SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG to fetchEnv(EV_KAFKA_CREDSTORE_PASSWORD),
+            ),
+    val kafkaConfigAudit: Map<String, Any> =
+        kafkaConfigGcp +
+            mapOf(
+                ConsumerConfig.GROUP_ID_CONFIG to
+                    getEnvOrDefault(env_KAFKA_CLIENTID, "LOCAL") + "_audit",
+                ConsumerConfig.CLIENT_ID_CONFIG to
+                    getEnvOrDefault(env_KAFKA_CLIENTID, "LOCAL") + "_audit",
             ),
     val sfClient: SalesforceClient = SalesforceClient(),
 )

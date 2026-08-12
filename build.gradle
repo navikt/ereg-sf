@@ -68,8 +68,14 @@ test {
 }
 
 sourceSets {
-    main.kotlin.srcDirs += 'src/main/kotlin'
-    test.kotlin.srcDirs += 'src/test/kotlin'
+    main {
+        kotlin.srcDirs += 'src/main/kotlin'
+        java.srcDirs += "$buildDir/generated/source/proto/main/java"
+    }
+
+    test {
+        kotlin.srcDirs += 'src/test/kotlin'
+    }
 }
 
 project.gradle.startParameter.excludedTaskNames.add('extractIncludeTestProto')
@@ -94,4 +100,12 @@ processTestResources.dependsOn {
 
 kotlin {
     jvmToolchain(21)
+}
+
+tasks.register("printJavaArch") {
+    doLast {
+        println("java.home = ${System.getProperty("java.home")}")
+        println("os.arch   = ${System.getProperty("os.arch")}")
+        println("os.name   = ${System.getProperty("os.name")}")
+    }
 }
