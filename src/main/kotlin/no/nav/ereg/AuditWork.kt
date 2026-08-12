@@ -98,6 +98,8 @@ class KafkaEventAuditCache {
         eventsByType[orgType]?.let { synchronized(it) { it.toList() } }
             ?: emptyList()
 
+    fun findByOffset(offset: Long): CachedKafkaEvent? = all().firstOrNull { it.offset == offset }
+
     fun all(): List<CachedKafkaEvent> =
         eventsByOrg.values.flatMap { list ->
             synchronized(list) {
@@ -217,33 +219,33 @@ internal fun auditWork(
                 "cache now contains ${auditCache.count()} events"
         }
 
-        auditCache
-            .byType(EregOrganisationEventKey.OrgType.ENHET)
-            .firstOrNull()
-            ?.let { event ->
-                log.info {
-                    """
-                    AUDIT SAMPLE ENHET
-                    orgNumber=${event.orgNumber}
-                    isTombstone=${event.isTombstone}
-                    json=${event.json}
-                    """.trimIndent()
-                }
-            }
-
-        auditCache
-            .byType(EregOrganisationEventKey.OrgType.UNDERENHET)
-            .firstOrNull()
-            ?.let { event ->
-                log.info {
-                    """
-                    AUDIT SAMPLE UNDERENHET
-                    orgNumber=${event.orgNumber}
-                    isTombstone=${event.isTombstone}
-                    json=${event.json}
-                    """.trimIndent()
-                }
-            }
+//        auditCache
+//            .byType(EregOrganisationEventKey.OrgType.ENHET)
+//            .firstOrNull()
+//            ?.let { event ->
+//                log.info {
+//                    """
+//                    AUDIT SAMPLE ENHET
+//                    orgNumber=${event.orgNumber}
+//                    isTombstone=${event.isTombstone}
+//                    json=${event.json}
+//                    """.trimIndent()
+//                }
+//            }
+//
+//        auditCache
+//            .byType(EregOrganisationEventKey.OrgType.UNDERENHET)
+//            .firstOrNull()
+//            ?.let { event ->
+//                log.info {
+//                    """
+//                    AUDIT SAMPLE UNDERENHET
+//                    orgNumber=${event.orgNumber}
+//                    isTombstone=${event.isTombstone}
+//                    json=${event.json}
+//                    """.trimIndent()
+//                }
+//            }
 
         KafkaConsumerStates.IsOk
     }

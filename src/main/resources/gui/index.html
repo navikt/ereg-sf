@@ -460,7 +460,7 @@
 
     let events = [];
 
-    const expanded = new Set();
+    const expanded = new Map();
 
     const searchInput =
         document.getElementById("search");
@@ -684,11 +684,9 @@
         return filtered;
     }
 
-
     function render() {
 
-        const filtered =
-            filteredEvents();
+        const filtered = filteredEvents();
 
         totalCount.textContent =
             events.length.toLocaleString();
@@ -701,121 +699,176 @@
 
         body.innerHTML = "";
 
-
         if (filtered.length === 0) {
-
             table.style.display = "none";
             empty.style.display = "block";
-
             return;
         }
-
 
         empty.style.display = "none";
         table.style.display = "table";
 
-
         filtered.forEach(event => {
 
-            const id =
-                makeEventId(event);
+            const id = String(event.offset);
+            const isExpanded = expanded.has(id);
+            const cachedJson = expanded.get(id);
 
-            const isExpanded =
-                expanded.has(id);
-
-
-            const row =
-                document.createElement("tr");
-
-            row.className =
-                "event-row";
-
+            const row = document.createElement("tr");
+            row.className = "event-row";
 
             row.innerHTML = `
-                <td>
-                    <button
-                        class="expand-button"
-                        title="${isExpanded ? "Collapse" : "Expand"}"
-                        data-id="${escapeHtml(id)}"
-                    >
-                        ${isExpanded ? "−" : "+"}
-                    </button>
-                </td>
+            <td>
+                <button
+                    class="expand-button"
+                    title="${isExpanded ? "Collapse" : "Expand"}"
+                    data-offset="${escapeHtml(event.offset)}"
+                >
+                    ${isExpanded ? "−" : "+"}
+                </button>
+            </td>
 
-                <td class="mono">
-                    ${escapeHtml(event.offset)}
-                </td>
+            <td class="mono">
+                ${escapeHtml(event.offset)}
+            </td>
 
-                <td>
-                    <span class="type-badge ${eventTypeClass(event)}">
-                        ${escapeHtml(eventTypeLabel(event))}
-                    </span>
-                </td>
+            <td>
+                <span class="type-badge ${eventTypeClass(event)}">
+                    ${escapeHtml(eventTypeLabel(event))}
+                </span>
+            </td>
 
-                <td class="mono">
-                    ${escapeHtml(event.orgNumber)}
-                </td>
+            <td class="mono">
+                ${escapeHtml(event.orgNumber)}
+            </td>
 
-                <td>
-                    ${escapeHtml(event.name)}
-                </td>
+            <td>
+                ${escapeHtml(event.name)}
+            </td>
 
-                <td class="mono">
-                    ${escapeHtml(event.registrationDate)}
-                </td>
-            `;
-
+            <td class="mono">
+                ${escapeHtml(event.registrationDate)}
+            </td>
+        `;
 
             body.appendChild(row);
 
-
             if (isExpanded) {
 
-                const jsonRow =
-                    document.createElement("tr");
+                const jsonRow = document.createElement("tr");
+                jsonRow.className = "json-row";
 
-                jsonRow.className =
-                    "json-row";
+                let content;
+
+                if (cachedJson === "__loading__") {
+                    content = `
+                    <div class="json-container">
+                        <span class="not-loaded">
+                            Loading JSON...
+                        </span>
+                    </div>
+                `;
+                } else if (cachedJson === "__error__") {
+                    content = `
+                    <div class="json-container">
+                        <span class="not-loaded">
+                            Could not load JSON.
+                        </span>
+                    </div>
+                `;
+                } else {
+                    content = `
+                    <div class="json-container">
+                        <pre>${escapeHtml(prettyJson(cachedJson))}</pre>
+                    </div>
+                `;
+                }
 
                 jsonRow.innerHTML = `
-                    <td colspan="6">
-                        <div class="json-container">
-                            <span class="not-loaded">
-                                Full JSON will be loaded on demand.
-                            </span>
-                        </div>
-                    </td>
-                `;
+                <td colspan="6">
+                    ${content}
+                </td>
+            `;
 
                 body.appendChild(jsonRow);
             }
-
         });
-
 
         body
             .querySelectorAll(".expand-button")
             .forEach(button => {
 
-                button.addEventListener(
-                    "click",
-                    () => {
+                button.addEventListener("click", async () => {
 
-                        const id =
-                            button.dataset.id;
+                    const offset = button.dataset.offset;
+                    const id = String(offset);
 
-                        if (expanded.has(id)) {
-                            expanded.delete(id);
-                        } else {
-                            expanded.add(id);
+                    if (expanded.has(id)) {
+                        expanded.delete(id);
+                        render();
+                        return;
+                    }
+
+                    expanded.set(id, "__loading__");
+                    render();
+
+                    try {
+
+                        const response =
+                            await fetch(
+                                `/internal/gui/api/events/${encodeURIComponent(offset)}`,
+                                {
+                                    headers: {
+                                        "Accept": "application/json"
+                                    }
+                                }
+                            );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                `HTTP ${response.status} ${response.statusText}`
+                            );
                         }
 
+                        const result =
+                            await response.json();
+
+                        expanded.set(id, result.json);
+                        render();
+
+                    } catch (error) {
+
+                        console.error(
+                            `Could not load event ${offset}`,
+                            error
+                        );
+
+                        expanded.set(id, "__error__");
                         render();
                     }
-                );
-
+                });
             });
+    }
 
+    function prettyJson(json) {
+
+        if (!json) {
+            return "";
+        }
+
+        if (typeof json === "object") {
+            return JSON.stringify(json, null, 2);
+        }
+
+        try {
+            return JSON.stringify(
+                JSON.parse(json),
+                null,
+                2
+            );
+        } catch (error) {
+            return json;
+        }
     }
 
 

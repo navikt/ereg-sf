@@ -17,6 +17,7 @@ import org.http4k.core.Status
 import org.http4k.core.Status.Companion.OK
 import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
+import org.http4k.routing.path
 import org.http4k.routing.routes
 import org.http4k.routing.static
 import org.http4k.server.Netty
@@ -63,11 +64,48 @@ fun naisAPI(): HttpHandler =
             val events =
                 auditCache
                     .all()
+                    .sortedByDescending { it.offset }
+                    .take(5000)
+                    .sortedBy { it.offset }
                     .map(CachedKafkaEvent::toAuditEventRow)
 
             Response(Status.OK)
                 .header("Content-Type", "application/json")
                 .body(gson.toJson(events))
+        },
+        "/internal/gui/api/events/{offset}" bind Method.GET to { request ->
+            val offset =
+                request
+                    .path("offset")
+                    ?.toLongOrNull()
+
+            if (offset == null) {
+                Response(Status.BAD_REQUEST)
+                    .body("Invalid offset")
+            } else {
+                val event = auditCache.findByOffset(offset)
+
+                if (event == null) {
+                    Response(Status.NOT_FOUND)
+                        .body("Event with offset $offset not found")
+                } else {
+                    Response(Status.OK)
+                        .header("Content-Type", "application/json")
+                        .body(
+                            gson.toJson(
+                                mapOf(
+                                    "offset" to event.offset,
+                                    "orgNumber" to event.orgNumber,
+                                    "orgType" to event.orgType.name,
+                                    "name" to event.name,
+                                    "registrationDate" to event.registrationDate?.toString(),
+                                    "isTombstone" to event.isTombstone,
+                                    "json" to event.json,
+                                ),
+                            ),
+                        )
+                }
+            }
         },
     )
 
