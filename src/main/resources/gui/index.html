@@ -14,10 +14,13 @@
             --text: #1f2937;
             --muted: #6b7280;
             --accent: #2563eb;
+
             --enhet: #065f46;
             --enhet-bg: #ecfdf5;
+
             --underenhet: #92400e;
             --underenhet-bg: #fffbeb;
+
             --tombstone: #991b1b;
             --tombstone-bg: #fef2f2;
         }
@@ -30,6 +33,7 @@
         body {
             margin: 0;
             padding: 0;
+
             font-family:
                     -apple-system,
                     BlinkMacSystemFont,
@@ -38,6 +42,7 @@
                     Helvetica,
                     Arial,
                     sans-serif;
+
             background: var(--background);
             color: var(--text);
         }
@@ -50,6 +55,7 @@
             background: var(--panel);
             border-bottom: 1px solid var(--border);
             padding: 16px 24px;
+
             position: sticky;
             top: 0;
             z-index: 10;
@@ -177,6 +183,7 @@
             background: #fafafa;
             border-bottom: 1px solid var(--border);
             padding: 10px 12px;
+
             position: sticky;
             top: 0;
             z-index: 5;
@@ -253,6 +260,7 @@
             white-space: pre-wrap;
             word-break: break-word;
             color: #e5e7eb;
+
             font-family:
                     ui-monospace,
                     SFMono-Regular,
@@ -260,6 +268,7 @@
                     Monaco,
                     Consolas,
                     monospace;
+
             font-size: 12px;
             line-height: 1.5;
         }
@@ -290,6 +299,11 @@
             margin-left: 4px;
         }
 
+        .not-loaded {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
         @media (max-width: 900px) {
             main {
                 padding: 12px;
@@ -318,16 +332,23 @@
     <div class="header-row">
         <div>
             <h1>EREG Audit</h1>
-            <div class="subtitle" id="subtitle">Kafka cache inspection</div>
+            <div class="subtitle" id="subtitle">
+                Kafka cache inspection
+            </div>
         </div>
 
         <nav>
-            <a id="nav-rows" href="/internal/gui/?view=rows">
+            <a
+                    id="nav-rows"
+                    href="/internal/gui/?view=rows"
+            >
                 Kafka rows
             </a>
 
-            <a id="nav-registration"
-               href="/internal/gui/?view=registreringsdato">
+            <a
+                    id="nav-registration"
+                    href="/internal/gui/?view=registreringsdato"
+            >
                 Registreringsdato
             </a>
         </nav>
@@ -339,11 +360,12 @@
     <div id="error-container"></div>
 
     <div class="toolbar">
+
         <input
                 id="search"
                 class="search"
                 type="search"
-                placeholder="Search org number, name, offset, JSON..."
+                placeholder="Search org number, name, offset..."
         >
 
         <select id="type-filter">
@@ -352,13 +374,29 @@
             <option value="UNDERENHET">UNDERENHET</option>
         </select>
 
-        <button id="reload">Reload</button>
+        <button id="reload">
+            Reload
+        </button>
+
     </div>
 
     <div class="stats">
-        <span>Loaded: <strong id="total-count">0</strong></span>
-        <span>Visible: <strong id="visible-count">0</strong></span>
-        <span>Expanded: <strong id="expanded-count">0</strong></span>
+
+        <span>
+            Loaded:
+            <strong id="total-count">0</strong>
+        </span>
+
+        <span>
+            Visible:
+            <strong id="visible-count">0</strong>
+        </span>
+
+        <span>
+            Expanded:
+            <strong id="expanded-count">0</strong>
+        </span>
+
     </div>
 
     <div class="table-container">
@@ -367,25 +405,48 @@
             Loading events...
         </div>
 
-        <table id="events-table" style="display: none;">
+        <table
+                id="events-table"
+                style="display: none;"
+        >
             <thead>
+
             <tr>
+
                 <th style="width: 45px;"></th>
-                <th id="sort-column-1">Offset</th>
-                <th>Partition</th>
-                <th>Type</th>
-                <th>Org number</th>
-                <th>Name</th>
-                <th id="sort-column-7">
+
+                <th id="offset-header">
+                    Offset
+                </th>
+
+                <th>
+                    Type
+                </th>
+
+                <th>
+                    Org number
+                </th>
+
+                <th>
+                    Name
+                </th>
+
+                <th id="registration-header">
                     Registration date
                 </th>
+
             </tr>
+
             </thead>
 
             <tbody id="events-body"></tbody>
         </table>
 
-        <div id="empty" class="empty" style="display: none;">
+        <div
+                id="empty"
+                class="empty"
+                style="display: none;"
+        >
             No events match the current filter.
         </div>
 
@@ -394,59 +455,117 @@
 </main>
 
 <script>
+
     const API_URL = "/internal/gui/api/events";
 
     let events = [];
+
     const expanded = new Set();
 
-    const searchInput = document.getElementById("search");
-    const typeFilter = document.getElementById("type-filter");
-    const reloadButton = document.getElementById("reload");
+    const searchInput =
+        document.getElementById("search");
 
-    const loading = document.getElementById("loading");
-    const table = document.getElementById("events-table");
-    const body = document.getElementById("events-body");
-    const empty = document.getElementById("empty");
+    const typeFilter =
+        document.getElementById("type-filter");
 
-    const totalCount = document.getElementById("total-count");
-    const visibleCount = document.getElementById("visible-count");
-    const expandedCount = document.getElementById("expanded-count");
-    const errorContainer = document.getElementById("error-container");
+    const reloadButton =
+        document.getElementById("reload");
 
-    const subtitle = document.getElementById("subtitle");
-    const navRows = document.getElementById("nav-rows");
-    const navRegistration = document.getElementById("nav-registration");
+    const loading =
+        document.getElementById("loading");
+
+    const table =
+        document.getElementById("events-table");
+
+    const body =
+        document.getElementById("events-body");
+
+    const empty =
+        document.getElementById("empty");
+
+    const totalCount =
+        document.getElementById("total-count");
+
+    const visibleCount =
+        document.getElementById("visible-count");
+
+    const expandedCount =
+        document.getElementById("expanded-count");
+
+    const errorContainer =
+        document.getElementById("error-container");
+
+    const subtitle =
+        document.getElementById("subtitle");
+
+    const navRows =
+        document.getElementById("nav-rows");
+
+    const navRegistration =
+        document.getElementById("nav-registration");
+
+    const offsetHeader =
+        document.getElementById("offset-header");
+
+    const registrationHeader =
+        document.getElementById("registration-header");
+
 
     function getView() {
-        const params = new URLSearchParams(window.location.search);
-        const view = params.get("view");
 
-        return view === "registreringsdato"
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+        return params.get("view") === "registreringsdato"
             ? "registreringsdato"
             : "rows";
     }
 
+
     const currentView = getView();
 
+
     function configureView() {
+
         if (currentView === "registreringsdato") {
+
             navRegistration.classList.add("active");
             navRows.classList.remove("active");
 
             subtitle.textContent =
                 "Events sorted by registreringsdatoEnhetsregisteret";
 
+            registrationHeader.innerHTML =
+                'Registration date <span class="sort-indicator">↑</span>';
+
+            offsetHeader.textContent =
+                "Offset";
+
         } else {
+
             navRows.classList.add("active");
             navRegistration.classList.remove("active");
 
             subtitle.textContent =
                 "Events sorted by Kafka offset";
+
+            offsetHeader.innerHTML =
+                'Offset <span class="sort-indicator">↑</span>';
+
+            registrationHeader.textContent =
+                "Registration date";
         }
     }
 
+
     function escapeHtml(value) {
-        if (value === null || value === undefined) {
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
             return "";
         }
 
@@ -458,43 +577,9 @@
             .replaceAll("'", "&#039;");
     }
 
-    function parseJson(json) {
-        if (!json) {
-            return null;
-        }
-
-        if (typeof json === "object") {
-            return json;
-        }
-
-        try {
-            return JSON.parse(json);
-        } catch (error) {
-            return null;
-        }
-    }
-
-    function prettyJson(json) {
-        const parsed = parseJson(json);
-
-        if (parsed !== null) {
-            return JSON.stringify(parsed, null, 2);
-        }
-
-        return json || "";
-    }
-
-    function getName(event) {
-        const parsed = parseJson(event.json);
-        return parsed?.navn || "";
-    }
-
-    function getRegistrationDate(event) {
-        const parsed = parseJson(event.json);
-        return parsed?.registreringsdatoEnhetsregisteret || "";
-    }
 
     function eventTypeClass(event) {
+
         if (event.isTombstone) {
             return "type-tombstone";
         }
@@ -510,7 +595,9 @@
         return "";
     }
 
+
     function eventTypeLabel(event) {
+
         if (event.isTombstone) {
             return "TOMBSTONE";
         }
@@ -518,18 +605,30 @@
         return event.orgType || "";
     }
 
-    function makeEventId(event, index) {
-        return `${event.partition ?? "?"}:${event.offset ?? index}`;
+
+    function makeEventId(event) {
+
+        return String(event.offset);
     }
 
+
     function filteredEvents() {
-        const search = searchInput.value.trim().toLowerCase();
-        const type = typeFilter.value;
 
-        return events
-            .filter((event) => {
+        const search =
+            searchInput.value
+                .trim()
+                .toLowerCase();
 
-                if (type && event.orgType !== type) {
+        const type =
+            typeFilter.value;
+
+        const filtered =
+            events.filter(event => {
+
+                if (
+                    type &&
+                    event.orgType !== type
+                ) {
                     return false;
                 }
 
@@ -539,81 +638,98 @@
 
                 const haystack = [
                     event.offset,
-                    event.partition,
                     event.orgNumber,
                     event.orgType,
-                    event.isTombstone,
-                    getName(event),
-                    getRegistrationDate(event),
-                    event.json
+                    event.name,
+                    event.registrationDate,
+                    event.isTombstone
                 ]
                     .join(" ")
                     .toLowerCase();
 
                 return haystack.includes(search);
-            })
-            .sort((a, b) => {
-
-                if (currentView === "registreringsdato") {
-                    const dateA = getRegistrationDate(a) || "9999-12-31";
-                    const dateB = getRegistrationDate(b) || "9999-12-31";
-
-                    const dateCompare = dateA.localeCompare(dateB);
-
-                    if (dateCompare !== 0) {
-                        return dateCompare;
-                    }
-
-                    return Number(a.offset ?? 0)
-                        - Number(b.offset ?? 0);
-                }
-
-                return Number(a.offset ?? 0)
-                    - Number(b.offset ?? 0);
             });
-    }
 
-    function updateSortHeader() {
-        const offsetHeader = document.getElementById("sort-column-1");
-        const registrationHeader = document.getElementById("sort-column-7");
 
         if (currentView === "registreringsdato") {
-            offsetHeader.innerHTML = "Offset";
-            registrationHeader.innerHTML =
-                'Registration date <span class="sort-indicator">↑</span>';
+
+            filtered.sort((a, b) => {
+
+                const dateA =
+                    a.registrationDate || "9999-12-31";
+
+                const dateB =
+                    b.registrationDate || "9999-12-31";
+
+                const dateCompare =
+                    dateA.localeCompare(dateB);
+
+                if (dateCompare !== 0) {
+                    return dateCompare;
+                }
+
+                return Number(a.offset || 0)
+                    - Number(b.offset || 0);
+            });
+
         } else {
-            offsetHeader.innerHTML =
-                'Offset <span class="sort-indicator">↑</span>';
-            registrationHeader.innerHTML =
-                "Registration date";
+
+            filtered.sort((a, b) =>
+                Number(a.offset || 0) -
+                Number(b.offset || 0)
+            );
         }
+
+
+        return filtered;
     }
 
-    function render() {
-        const filtered = filteredEvents();
 
-        totalCount.textContent = events.length.toLocaleString();
-        visibleCount.textContent = filtered.length.toLocaleString();
-        expandedCount.textContent = expanded.size.toLocaleString();
+    function render() {
+
+        const filtered =
+            filteredEvents();
+
+        totalCount.textContent =
+            events.length.toLocaleString();
+
+        visibleCount.textContent =
+            filtered.length.toLocaleString();
+
+        expandedCount.textContent =
+            expanded.size.toLocaleString();
 
         body.innerHTML = "";
 
+
         if (filtered.length === 0) {
+
             table.style.display = "none";
             empty.style.display = "block";
+
             return;
         }
+
 
         empty.style.display = "none";
         table.style.display = "table";
 
-        filtered.forEach((event, index) => {
 
-            const id = makeEventId(event, index);
-            const isExpanded = expanded.has(id);
+        filtered.forEach(event => {
 
-            const row = document.createElement("tr");
-            row.className = "event-row";
+            const id =
+                makeEventId(event);
+
+            const isExpanded =
+                expanded.has(id);
+
+
+            const row =
+                document.createElement("tr");
+
+            row.className =
+                "event-row";
+
 
             row.innerHTML = `
                 <td>
@@ -630,10 +746,6 @@
                     ${escapeHtml(event.offset)}
                 </td>
 
-                <td class="mono">
-                    ${escapeHtml(event.partition)}
-                </td>
-
                 <td>
                     <span class="type-badge ${eventTypeClass(event)}">
                         ${escapeHtml(eventTypeLabel(event))}
@@ -645,47 +757,67 @@
                 </td>
 
                 <td>
-                    ${escapeHtml(getName(event))}
+                    ${escapeHtml(event.name)}
                 </td>
 
                 <td class="mono">
-                    ${escapeHtml(getRegistrationDate(event))}
+                    ${escapeHtml(event.registrationDate)}
                 </td>
             `;
 
+
             body.appendChild(row);
 
+
             if (isExpanded) {
-                const jsonRow = document.createElement("tr");
-                jsonRow.className = "json-row";
+
+                const jsonRow =
+                    document.createElement("tr");
+
+                jsonRow.className =
+                    "json-row";
 
                 jsonRow.innerHTML = `
-                    <td colspan="7">
+                    <td colspan="6">
                         <div class="json-container">
-                            <pre>${escapeHtml(prettyJson(event.json))}</pre>
+                            <span class="not-loaded">
+                                Full JSON will be loaded on demand.
+                            </span>
                         </div>
                     </td>
                 `;
 
                 body.appendChild(jsonRow);
             }
+
         });
 
-        body.querySelectorAll(".expand-button").forEach(button => {
-            button.addEventListener("click", () => {
 
-                const id = button.dataset.id;
+        body
+            .querySelectorAll(".expand-button")
+            .forEach(button => {
 
-                if (expanded.has(id)) {
-                    expanded.delete(id);
-                } else {
-                    expanded.add(id);
-                }
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                render();
+                        const id =
+                            button.dataset.id;
+
+                        if (expanded.has(id)) {
+                            expanded.delete(id);
+                        } else {
+                            expanded.add(id);
+                        }
+
+                        render();
+                    }
+                );
+
             });
-        });
+
     }
+
 
     async function loadEvents() {
 
@@ -695,32 +827,51 @@
         table.style.display = "none";
         empty.style.display = "none";
 
+
         try {
 
-            const response = await fetch(API_URL, {
-                headers: {
-                    "Accept": "application/json"
-                }
-            });
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        headers: {
+                            "Accept":
+                                "application/json"
+                        }
+                    }
+                );
+
 
             if (!response.ok) {
+
                 throw new Error(
                     `HTTP ${response.status} ${response.statusText}`
                 );
             }
 
-            const result = await response.json();
+
+            const result =
+                await response.json();
+
 
             if (Array.isArray(result)) {
+
                 events = result;
-            } else if (Array.isArray(result.events)) {
+
+            } else if (
+                Array.isArray(result.events)
+            ) {
+
                 events = result.events;
+
             } else {
+
                 throw new Error(
                     "Unexpected API response. " +
                     "Expected an array or { events: [] }."
                 );
             }
+
 
             loading.style.display = "none";
 
@@ -732,25 +883,50 @@
 
             errorContainer.innerHTML = `
                 <div class="error">
-                    <strong>Could not load events.</strong><br>
+
+                    <strong>
+                        Could not load events.
+                    </strong>
+
+                    <br>
+
                     ${escapeHtml(error.message)}
+
                     <br><br>
+
                     Expected endpoint:
+
                     <span class="mono">
                         ${escapeHtml(API_URL)}
                     </span>
+
                 </div>
             `;
         }
     }
 
-    searchInput.addEventListener("input", render);
-    typeFilter.addEventListener("change", render);
-    reloadButton.addEventListener("click", loadEvents);
+
+    searchInput.addEventListener(
+        "input",
+        render
+    );
+
+
+    typeFilter.addEventListener(
+        "change",
+        render
+    );
+
+
+    reloadButton.addEventListener(
+        "click",
+        loadEvents
+    );
+
 
     configureView();
-    updateSortHeader();
     loadEvents();
+
 </script>
 
 </body>

@@ -5,9 +5,11 @@ import filesHandler
 import io.prometheus.client.Gauge
 import io.prometheus.client.exporter.common.TextFormat
 import mu.KotlinLogging
+import no.nav.ereg.CachedKafkaEvent
 import no.nav.ereg.auditCache
 import no.nav.ereg.metrics.Metrics.cRegistry
 import no.nav.ereg.salesforce.NewAccessTokenHandler
+import no.nav.ereg.toAuditEventRow
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method
 import org.http4k.core.Response
@@ -58,12 +60,14 @@ fun naisAPI(): HttpHandler =
         "/internal/files/{path:.*}" bind Method.GET to filesHandler(File("/tmp/files")),
         "/internal/gui" bind Method.GET to static(ResourceLoader.Classpath("gui")),
         "/internal/gui/api/events" bind Method.GET to {
-            val events = auditCache.all().takeLast(5000)
+            val events =
+                auditCache
+                    .all()
+                    .map(CachedKafkaEvent::toAuditEventRow)
+
             Response(Status.OK)
                 .header("Content-Type", "application/json")
-                .body(
-                    gson.toJson(events),
-                )
+                .body(gson.toJson(events))
         },
     )
 

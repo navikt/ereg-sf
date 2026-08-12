@@ -1,20 +1,72 @@
 package no.nav.ereg
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import mu.KotlinLogging
 import no.nav.ereg.kafka.AKafkaConsumer
 import no.nav.ereg.kafka.KafkaConsumerStates
 import no.nav.ereg.proto.EregOrganisationEventKey
+import java.time.LocalDate
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
 data class CachedKafkaEvent(
+    val offset: Long,
     val orgNumber: String,
     val orgType: EregOrganisationEventKey.OrgType,
+    val name: String?,
+    val registrationDate: LocalDate?,
     val json: String?,
     val isTombstone: Boolean,
-    val partition: Int,
-    val offset: Long,
 )
+
+data class AuditEventRow(
+    val offset: Long,
+    val orgNumber: String,
+    val orgType: String,
+    val name: String?,
+    val registrationDate: String?,
+    val isTombstone: Boolean,
+)
+
+fun CachedKafkaEvent.toAuditEventRow(): AuditEventRow =
+    AuditEventRow(
+        offset = offset,
+        orgNumber = orgNumber,
+        orgType = orgType.name,
+        name = name,
+        registrationDate = registrationDate?.toString(),
+        isTombstone = isTombstone,
+    )
+
+private val gson = Gson()
+
+fun extractAuditFields(json: String): Pair<String?, LocalDate?> =
+    try {
+        val root = gson.fromJson(json, JsonObject::class.java)
+
+        val name =
+            root
+                .get("navn")
+                ?.takeIf { !it.isJsonNull }
+                ?.asString
+
+        val registrationDate =
+            root
+                .get("registreringsdatoEnhetsregisteret")
+                ?.takeIf { !it.isJsonNull }
+                ?.asString
+                ?.takeIf { it.isNotBlank() }
+                ?.let(LocalDate::parse)
+
+        Pair(name, registrationDate)
+    } catch (e: Exception) {
+//        log.warn(e) {
+//            "Could not extract audit fields from JSON"
+//        }
+
+        Pair(null, null)
+    }
 
 class KafkaEventAuditCache {
     private val eventsByOrg =
@@ -111,14 +163,20 @@ internal fun auditWork(
                     val orgNumber = parsed.key.orgNumber
 
                     if (orgNumber.isNotEmpty()) {
+                        val json = parsed.value.orgAsJson as String
+
+                        val (name, registrationDate) =
+                            extractAuditFields(json)
+
                         auditCache.add(
                             CachedKafkaEvent(
+                                offset = record.offset(),
                                 orgNumber = orgNumber,
                                 orgType = parsed.key.orgType,
-                                json = parsed.value.orgAsJson as String,
+                                name = name,
+                                registrationDate = registrationDate,
+                                json = json,
                                 isTombstone = false,
-                                partition = record.partition(),
-                                offset = record.offset(),
                             ),
                         )
                     }
@@ -130,12 +188,13 @@ internal fun auditWork(
                     if (orgNumber.isNotEmpty()) {
                         auditCache.add(
                             CachedKafkaEvent(
+                                offset = record.offset(),
                                 orgNumber = orgNumber,
                                 orgType = parsed.key.orgType,
+                                name = null,
+                                registrationDate = null,
                                 json = null,
                                 isTombstone = true,
-                                partition = record.partition(),
-                                offset = record.offset(),
                             ),
                         )
                     }
